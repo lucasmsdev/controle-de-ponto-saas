@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/data_service.dart';
@@ -117,12 +117,36 @@ class _HistoryScreenState extends State<HistoryScreen> {
               if (record.photoPath != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    File(record.photoPath!),
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
+                  child: kIsWeb
+                      ? Image.network(
+                          record.photoPath!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.image_not_supported),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.blue[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.blue,
+                          ),
+                        ),
                 )
               else
                 Container(
@@ -218,7 +242,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ],
             ),
-            Image.file(File(photoPath)),
+            kIsWeb
+                ? Image.network(
+                    photoPath,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        padding: const EdgeInsets.all(32),
+                        child: const Column(
+                          children: [
+                            Icon(Icons.image_not_supported, size: 64),
+                            SizedBox(height: 16),
+                            Text('Imagem não disponível na web'),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : Container(
+                    padding: const EdgeInsets.all(32),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.camera_alt, size: 64),
+                        SizedBox(height: 16),
+                        Text('Foto capturada'),
+                      ],
+                    ),
+                  ),
           ],
         ),
       ),

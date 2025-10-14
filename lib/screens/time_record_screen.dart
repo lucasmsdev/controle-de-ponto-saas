@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +22,7 @@ class TimeRecordScreen extends StatefulWidget {
 class _TimeRecordScreenState extends State<TimeRecordScreen> {
   final _dataService = DataService();
   final _imagePicker = ImagePicker();
-  String? _imagePath;
+  XFile? _imageFile;
   bool _isProcessing = false;
 
   /// Captura foto usando a câmera
@@ -35,7 +36,7 @@ class _TimeRecordScreenState extends State<TimeRecordScreen> {
 
       if (photo != null) {
         setState(() {
-          _imagePath = photo.path;
+          _imageFile = photo;
         });
       }
     } catch (e) {
@@ -60,7 +61,7 @@ class _TimeRecordScreenState extends State<TimeRecordScreen> {
 
       if (image != null) {
         setState(() {
-          _imagePath = image.path;
+          _imageFile = image;
         });
       }
     } catch (e) {
@@ -77,7 +78,7 @@ class _TimeRecordScreenState extends State<TimeRecordScreen> {
 
   /// Registra o ponto
   Future<void> _registerTimeRecord() async {
-    if (_imagePath == null) {
+    if (_imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, tire uma foto primeiro'),
@@ -93,7 +94,7 @@ class _TimeRecordScreenState extends State<TimeRecordScreen> {
       userId: _dataService.currentUser!.id,
       timestamp: DateTime.now(),
       type: widget.recordType,
-      photoPath: _imagePath,
+      photoPath: _imageFile!.path,
       isManual: false,
     );
 
@@ -152,7 +153,7 @@ class _TimeRecordScreenState extends State<TimeRecordScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            if (_imagePath != null) ...[
+            if (_imageFile != null) ...[
               const Text(
                 'Foto capturada:',
                 style: TextStyle(
@@ -163,11 +164,38 @@ class _TimeRecordScreenState extends State<TimeRecordScreen> {
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(_imagePath!),
-                  height: 300,
-                  fit: BoxFit.cover,
-                ),
+                child: kIsWeb
+                    ? Image.network(
+                        _imageFile!.path,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 300,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image, size: 64),
+                          );
+                        },
+                      )
+                    : FutureBuilder<Uint8List>(
+                        future: _imageFile!.readAsBytes(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return Image.memory(
+                              snapshot.data!,
+                              height: 300,
+                              fit: BoxFit.cover,
+                            );
+                          }
+                          return Container(
+                            height: 300,
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                      ),
               ),
               const SizedBox(height: 24),
             ] else ...[
