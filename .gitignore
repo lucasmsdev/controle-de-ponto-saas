@@ -25,3 +25,27 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Flutter build outputs
+/lib/generated_plugin_registrant.dart
+**/ios/Flutter/.last_build_id
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Coverage
+coverage/
+
+# Android Studio build outputs
+/android/app/debug
+/android/app/profile
+/android/app/release

@@ -1,0 +1,246 @@
+import 'package:flutter/material.dart';
+import '../services/data_service.dart';
+import '../models/user.dart';
+
+/// Tela de administração de usuários (apenas admin e gerente)
+class AdminScreen extends StatefulWidget {
+  const AdminScreen({super.key});
+
+  @override
+  State<AdminScreen> createState() => _AdminScreenState();
+}
+
+class _AdminScreenState extends State<AdminScreen> {
+  final _dataService = DataService();
+
+  @override
+  Widget build(BuildContext context) {
+    final users = _dataService.users;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Administração de Usuários'),
+      ),
+      body: users.isEmpty
+          ? const Center(
+              child: Text('Nenhum usuário encontrado'),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+                return _buildUserCard(user);
+              },
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showUserDialog(),
+        icon: const Icon(Icons.add),
+        label: const Text('Novo Usuário'),
+      ),
+    );
+  }
+
+  Widget _buildUserCard(User user) {
+    final isCurrentUser = user.id == _dataService.currentUser?.id;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Text(user.name[0].toUpperCase()),
+        ),
+        title: Text(user.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(user.email),
+            const SizedBox(height: 4),
+            Chip(
+              label: Text(
+                user.role.displayName,
+                style: const TextStyle(fontSize: 11),
+              ),
+              padding: EdgeInsets.zero,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => _showUserDialog(user: user),
+            ),
+            if (!isCurrentUser && _dataService.isAdmin)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => _confirmDelete(user),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUserDialog({User? user}) {
+    final isEditing = user != null;
+    final nameController = TextEditingController(text: user?.name ?? '');
+    final emailController = TextEditingController(text: user?.email ?? '');
+    final passwordController = TextEditingController(text: user?.password ?? '');
+    UserRole selectedRole = user?.role ?? UserRole.funcionario;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(isEditing ? 'Editar Usuário' : 'Novo Usuário'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Senha',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<UserRole>(
+                  value: selectedRole,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de Usuário',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: UserRole.values.map((role) {
+                    return DropdownMenuItem(
+                      value: role,
+                      child: Text(role.displayName),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedRole = value);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.isEmpty ||
+                    emailController.text.isEmpty ||
+                    passwordController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                if (isEditing) {
+                  _dataService.updateUser(
+                    user.copyWith(
+                      name: nameController.text,
+                      email: emailController.text,
+                      password: passwordController.text,
+                      role: selectedRole,
+                    ),
+                  );
+                } else {
+                  _dataService.addUser(
+                    name: nameController.text,
+                    email: emailController.text,
+                    password: passwordController.text,
+                    role: selectedRole,
+                  );
+                }
+
+                Navigator.of(context).pop();
+                this.setState(() {});
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isEditing
+                          ? 'Usuário atualizado com sucesso'
+                          : 'Usuário criado com sucesso',
+                    ),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              child: Text(isEditing ? 'Salvar' : 'Criar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(User user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Exclusão'),
+        content: Text(
+          'Tem certeza que deseja excluir o usuário ${user.name}? '
+          'Todos os registros de ponto dele também serão removidos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _dataService.deleteUser(user.id);
+              Navigator.of(context).pop();
+              setState(() {});
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Usuário excluído com sucesso'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+  }
+}
