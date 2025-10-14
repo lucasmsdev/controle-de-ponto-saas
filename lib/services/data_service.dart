@@ -1,11 +1,14 @@
 import '../models/user.dart';
 import '../models/time_record.dart';
+import 'supabase_service.dart';
 
-/// Serviço para gerenciar dados localmente (simulando banco de dados)
+/// Serviço para gerenciar dados usando Supabase
 class DataService {
   static final DataService _instance = DataService._internal();
   factory DataService() => _instance;
   DataService._internal();
+  
+  final _supabaseService = SupabaseService();
 
   /// Usuário atualmente logado
   User? currentUser;
@@ -93,92 +96,56 @@ class DataService {
   }
 
   /// Inicia um novo período (trabalho ou pausa)
-  TimeRecord startPeriod({
+  Future<bool> startPeriod({
     required String userId,
     required RecordType type,
-  }) {
-    final record = TimeRecord(
-      id: (_recordIdCounter++).toString(),
-      userId: userId,
-      startTime: DateTime.now(),
-      type: type,
-    );
-    timeRecords.add(record);
-    return record;
+  }) async {
+    return await _supabaseService.startPeriod(userId, type.name);
   }
 
   /// Encerra o período ativo atual (trabalho ou pausa)
-  TimeRecord? stopActivePeriod({
+  Future<bool> stopActivePeriod({
     required String userId,
     required RecordType type,
-  }) {
-    try {
-      // Encontra o registro ativo do tipo especificado
-      final activeRecord = timeRecords.firstWhere(
-        (r) => r.userId == userId && r.type == type && r.isActive,
-      );
-
-      // Atualiza o registro com o horário de término
-      final updatedRecord = activeRecord.copyWith(
-        endTime: DateTime.now(),
-      );
-
-      // Substitui o registro antigo pelo atualizado
-      final index = timeRecords.indexOf(activeRecord);
-      timeRecords[index] = updatedRecord;
-
-      return updatedRecord;
-    } catch (e) {
-      // Retorna null se não houver período ativo
-      return null;
-    }
+  }) async {
+    return await _supabaseService.stopActivePeriod(userId);
   }
 
   /// Verifica se há um período ativo para o usuário
-  bool hasActivePeriod({
+  Future<bool> hasActivePeriod({
     required String userId,
     required RecordType type,
-  }) {
-    return timeRecords.any(
-      (r) => r.userId == userId && r.type == type && r.isActive,
-    );
+  }) async {
+    final activeRecord = await _supabaseService.getActivePeriod(userId);
+    return activeRecord != null && activeRecord.type == type.name;
   }
 
   /// Obtém o registro ativo atual (se houver)
-  TimeRecord? getActivePeriod({
+  Future<TimeRecord?> getActivePeriod({
     required String userId,
     required RecordType type,
-  }) {
-    try {
-      return timeRecords.firstWhere(
-        (r) => r.userId == userId && r.type == type && r.isActive,
-      );
-    } catch (e) {
-      return null;
+  }) async {
+    final activeRecord = await _supabaseService.getActivePeriod(userId);
+    if (activeRecord != null && activeRecord.type == type.name) {
+      return activeRecord;
     }
+    return null;
   }
 
-  /// Obtém registros de um usuário específico
-  List<TimeRecord> getUserRecords(String userId) {
-    return timeRecords.where((r) => r.userId == userId).toList()
-      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+  /// Obtém registros de um usuário específico (últimos 30 dias)
+  Future<List<TimeRecord>> getUserRecords(String userId) async {
+    return await _supabaseService.getRecordsLastDays(userId, 30);
   }
 
-  /// Obtém todos os registros (ordenados por data)
-  List<TimeRecord> getAllRecords() {
-    return List.from(timeRecords)
-      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+  /// Obtém todos os registros (últimos 30 dias, ordenados por data)
+  Future<List<TimeRecord>> getAllRecords() async {
+    return await _supabaseService.getAllRecordsLastDays(30);
   }
 
   /// Calcula o resumo diário para um usuário em uma data específica
-  DailySummary getDailySummary(String userId, DateTime date) {
-    // Filtra registros do usuário na data especificada
-    final dayRecords = timeRecords.where((r) {
-      return r.userId == userId &&
-          r.startTime.year == date.year &&
-          r.startTime.month == date.month &&
-          r.startTime.day == date.day;
-    }).toList();
+  Future<DailySummary> getDailySummary(String userId, DateTime date) async {
+    // Busca registros do Supabase para a data especificada
+    final dayRecords = await _supabaseService.getRecordsForDate(userId, date);
 
     double totalWorkHours = 0;
     double totalBreakHours = 0;
@@ -187,7 +154,7 @@ class DataService {
     for (final record in dayRecords) {
       // Ignora registros ainda ativos para o cálculo
       if (!record.isActive) {
-        if (record.type == RecordType.trabalho) {
+        if (record.type == RecordType.trabalho.name) {
           totalWorkHours += record.durationInHours;
         } else {
           totalBreakHours += record.durationInHours;
@@ -224,46 +191,33 @@ class DataService {
   }
 
   /// Adiciona um registro manual (com horários específicos)
-  TimeRecord addManualRecord({
+  Future<bool> addManualRecord({
     required String userId,
     required DateTime startTime,
     required DateTime endTime,
     required RecordType type,
-  }) {
-    final record = TimeRecord(
-      id: (_recordIdCounter++).toString(),
+  }) async {
+    return await _supabaseService.addManualRecord(
       userId: userId,
       startTime: startTime,
       endTime: endTime,
-      type: type,
+      type: type.name,
     );
-    timeRecords.add(record);
-    return record;
   }
 
   /// Edita um registro existente
-  void updateRecord(TimeRecord updatedRecord) {
-    final index = timeRecords.indexWhere((r) => r.id == updatedRecord.id);
-    if (index != -1) {
-      timeRecords[index] = updatedRecord;
-    }
+  Future<bool> updateRecord(TimeRecord updatedRecord) async {
+    return await _supabaseService.updateRecord(updatedRecord);
   }
 
   /// Remove um registro
-  void deleteRecord(String recordId) {
-    timeRecords.removeWhere((r) => r.id == recordId);
+  Future<bool> deleteRecord(String recordId) async {
+    return await _supabaseService.deleteRecord(recordId);
   }
 
   /// Verifica se o funcionário já fez lançamento manual hoje
-  bool hasManualRecordToday(String userId) {
-    final today = DateTime.now();
-    return timeRecords.any((r) {
-      return r.userId == userId &&
-          r.startTime.year == today.year &&
-          r.startTime.month == today.month &&
-          r.startTime.day == today.day &&
-          r.endTime != null; // Apenas registros completos (manuais ou finalizados)
-    });
+  Future<bool> hasManualRecordToday(String userId) async {
+    return await _supabaseService.hasManualRecordToday(userId);
   }
 
   /// Obtém registros dos últimos N dias
