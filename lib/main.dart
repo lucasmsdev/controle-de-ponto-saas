@@ -1,65 +1,48 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
+import 'services/theme_service.dart';
 
 /// Ponto de entrada do aplicativo
 void main() {
   runApp(const ControlePontoApp());
 }
 
-/// Widget raiz do aplicativo
-class ControlePontoApp extends StatelessWidget {
+/// Widget raiz do aplicativo com suporte a tema claro/escuro
+class ControlePontoApp extends StatefulWidget {
   const ControlePontoApp({super.key});
+
+  @override
+  State<ControlePontoApp> createState() => _ControlePontoAppState();
+}
+
+class _ControlePontoAppState extends State<ControlePontoApp> {
+  final _themeService = ThemeService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Escuta mudanças de tema
+    _themeService.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _themeService.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Controle de Ponto',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        // Cores personalizadas
-        primaryColor: const Color(0xFF14a25c), // Verde principal
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF14a25c),
-          secondary: const Color(0xFFf28b4f), // Laranja secundário
-        ),
-        scaffoldBackgroundColor: Colors.white,
-        useMaterial3: true,
-        
-        // Estilo dos botões principais
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF14a25c),
-            foregroundColor: Colors.white,
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        
-        // Estilo do AppBar
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF14a25c),
-          foregroundColor: Colors.white,
-          elevation: 2,
-        ),
-        
-        // Estilo dos cards
-        cardTheme: CardTheme(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.grey[100],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
+      theme: ThemeService.lightTheme,
+      darkTheme: ThemeService.darkTheme,
+      themeMode: _themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: const LoginScreen(),
     );
   }
