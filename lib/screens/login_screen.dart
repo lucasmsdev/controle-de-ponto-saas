@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/data_service.dart';
+import '../services/supabase_service.dart';
 import 'dashboard_screen.dart';
+import 'admin_registration_screen.dart';
 
 /// Tela de login do sistema
 class LoginScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _dataService = DataService();
+  final _supabaseService = SupabaseService();
   bool _isLoading = false;
 
   @override
@@ -30,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    final user = _dataService.login(
+    final user = await _supabaseService.login(
       _emailController.text.trim(),
       _passwordController.text,
     );
@@ -136,6 +137,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Entrar',
                             style: TextStyle(fontSize: 16),
                           ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminRegistrationScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Criar nova conta'),
                   ),
                   const SizedBox(height: 24),
                   const Divider(),

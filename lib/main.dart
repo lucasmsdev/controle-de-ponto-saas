@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'services/theme_service.dart';
+import 'services/supabase_service.dart';
 
 /// Ponto de entrada do aplicativo
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await SupabaseService.initialize();
+  
   runApp(const ControlePontoApp());
 }
 
