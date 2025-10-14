@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/data_service.dart';
+import '../services/supabase_service.dart';
 import '../models/user.dart';
 
 class AdminRegistrationScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _dataService = DataService();
+  final _supabaseService = SupabaseService();
   
   UserRole _selectedRole = UserRole.funcionario;
   bool _isLoading = false;
@@ -37,29 +37,37 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      _dataService.users.add(User(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      final result = await _supabaseService.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text,
         role: _selectedRole,
-      ));
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Usuário ${_nameController.text.trim()} cadastrado com sucesso!'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-        
-        Navigator.pop(context);
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Usuário ${_nameController.text.trim()} cadastrado com sucesso!'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+          );
+          
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Erro ao cadastrar usuário'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao cadastrar usuário: $e'),
+            content: Text('Erro inesperado: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -143,14 +151,6 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                   if (!value.contains('@') || !value.contains('.')) {
                     return 'Digite um email válido';
                   }
-                  
-                  final emailExists = _dataService.users.any(
-                    (user) => user.email.toLowerCase() == value.trim().toLowerCase(),
-                  );
-                  if (emailExists) {
-                    return 'Este email já está cadastrado';
-                  }
-                  
                   return null;
                 },
               ),

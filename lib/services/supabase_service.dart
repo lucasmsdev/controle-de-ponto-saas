@@ -54,7 +54,7 @@ class SupabaseService {
     _currentUser = null;
   }
 
-  Future<bool> register({
+  Future<Map<String, dynamic>> register({
     required String name,
     required String email,
     required String password,
@@ -68,10 +68,16 @@ class SupabaseService {
         'role': role.name,
       });
 
-      return true;
+      return {'success': true, 'message': 'Usuário cadastrado com sucesso'};
     } catch (e) {
       print('Erro ao cadastrar usuário: $e');
-      return false;
+      
+      final errorMessage = e.toString();
+      if (errorMessage.contains('duplicate') || errorMessage.contains('unique')) {
+        return {'success': false, 'message': 'Este email já está cadastrado'};
+      }
+      
+      return {'success': false, 'message': 'Erro ao cadastrar usuário'};
     }
   }
 
@@ -126,6 +132,7 @@ class SupabaseService {
         'user_id': int.parse(userId),
         'start_time': DateTime.now().toIso8601String(),
         'type': type,
+        'is_manual': false,
       });
 
       return true;
@@ -274,6 +281,7 @@ class SupabaseService {
         'start_time': startTime.toIso8601String(),
         'end_time': endTime.toIso8601String(),
         'type': type,
+        'is_manual': true,
       });
 
       return true;
@@ -318,9 +326,9 @@ class SupabaseService {
           .from('time_records')
           .select('id')
           .eq('user_id', int.parse(userId))
+          .eq('is_manual', true)
           .gte('start_time', startOfDay.toIso8601String())
-          .lte('start_time', endOfDay.toIso8601String())
-          .not('end_time', 'is', null);
+          .lte('start_time', endOfDay.toIso8601String());
 
       return (response as List).isNotEmpty;
     } catch (e) {

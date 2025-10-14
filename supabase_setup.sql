@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS time_records (
   start_time TIMESTAMP WITH TIME ZONE NOT NULL,
   end_time TIMESTAMP WITH TIME ZONE,
   type TEXT NOT NULL CHECK (type IN ('trabalho', 'pausa')),
+  is_manual BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
