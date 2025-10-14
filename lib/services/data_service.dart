@@ -112,22 +112,26 @@ class DataService {
     required String userId,
     required RecordType type,
   }) {
-    // Encontra o registro ativo do tipo especificado
-    final activeRecord = timeRecords.firstWhere(
-      (r) => r.userId == userId && r.type == type && r.isActive,
-      orElse: () => throw Exception('Nenhum período ativo encontrado'),
-    );
+    try {
+      // Encontra o registro ativo do tipo especificado
+      final activeRecord = timeRecords.firstWhere(
+        (r) => r.userId == userId && r.type == type && r.isActive,
+      );
 
-    // Atualiza o registro com o horário de término
-    final updatedRecord = activeRecord.copyWith(
-      endTime: DateTime.now(),
-    );
+      // Atualiza o registro com o horário de término
+      final updatedRecord = activeRecord.copyWith(
+        endTime: DateTime.now(),
+      );
 
-    // Substitui o registro antigo pelo atualizado
-    final index = timeRecords.indexOf(activeRecord);
-    timeRecords[index] = updatedRecord;
+      // Substitui o registro antigo pelo atualizado
+      final index = timeRecords.indexOf(activeRecord);
+      timeRecords[index] = updatedRecord;
 
-    return updatedRecord;
+      return updatedRecord;
+    } catch (e) {
+      // Retorna null se não houver período ativo
+      return null;
+    }
   }
 
   /// Verifica se há um período ativo para o usuário
