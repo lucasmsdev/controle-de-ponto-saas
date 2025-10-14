@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/data_service.dart';
@@ -104,199 +103,177 @@ class _HistoryScreenState extends State<HistoryScreen> {
     User user,
     bool showUserInfo,
   ) {
+    final isActive = record.isActive;
+    final duration = record.durationInMinutes;
+    final hours = duration ~/ 60;
+    final minutes = duration % 60;
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: record.photoPath != null
-            ? () => _showPhotoDialog(record.photoPath!)
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            children: [
-              if (record.photoPath != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: kIsWeb
-                      ? Image.network(
-                          record.photoPath!,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.image_not_supported),
-                            );
-                          },
-                        )
-                      : Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.blue[100],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.blue,
-                          ),
-                        ),
-                )
-              else
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showUserInfo) ...[
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: const Color(0xFF14a25c),
+                    radius: 16,
+                    child: Text(
+                      user.name[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  child: const Icon(Icons.image_not_supported),
-                ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (showUserInfo) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: record.type == RecordType.trabalho
+                        ? const Color(0xFF14a25c).withOpacity(0.1)
+                        : const Color(0xFFf28b4f).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: record.type == RecordType.trabalho
+                          ? const Color(0xFF14a25c)
+                          : const Color(0xFFf28b4f),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        record.type == RecordType.trabalho
+                            ? Icons.work
+                            : Icons.pause_circle,
+                        size: 18,
+                        color: record.type == RecordType.trabalho
+                            ? const Color(0xFF14a25c)
+                            : const Color(0xFFf28b4f),
+                      ),
+                      const SizedBox(width: 6),
                       Text(
-                        user.name,
-                        style: const TextStyle(
+                        record.type.displayName,
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: record.type == RecordType.trabalho
+                              ? const Color(0xFF14a25c)
+                              : const Color(0xFFf28b4f),
                         ),
                       ),
-                      const SizedBox(height: 4),
                     ],
-                    Row(
+                  ),
+                ),
+                const Spacer(),
+                if (isActive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Row(
                       children: [
-                        Icon(
-                          _getIconForRecordType(record.type),
-                          size: 20,
-                          color: _getColorForRecordType(record.type),
-                        ),
-                        const SizedBox(width: 8),
+                        Icon(Icons.circle, size: 8, color: Colors.green),
+                        SizedBox(width: 4),
                         Text(
-                          record.type.displayName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: _getColorForRecordType(record.type),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('dd/MM/yyyy HH:mm').format(record.timestamp),
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                    if (record.isManual) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[100],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'Manual',
+                          'Em andamento',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.orange,
+                            color: Colors.green,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showPhotoDialog(String photoPath) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppBar(
-              title: const Text('Foto do Registro'),
-              automaticallyImplyLeading: false,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            kIsWeb
-                ? Image.network(
-                    photoPath,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        padding: const EdgeInsets.all(32),
-                        child: const Column(
-                          children: [
-                            Icon(Icons.image_not_supported, size: 64),
-                            SizedBox(height: 16),
-                            Text('Imagem não disponível na web'),
-                          ],
-                        ),
-                      );
-                    },
-                  )
-                : Container(
-                    padding: const EdgeInsets.all(32),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.camera_alt, size: 64),
-                        SizedBox(height: 16),
-                        Text('Foto capturada'),
                       ],
                     ),
                   ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  DateFormat('dd/MM/yyyy').format(record.startTime),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  DateFormat('HH:mm').format(record.startTime),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (record.endTime != null) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '→',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    DateFormat('HH:mm').format(record.endTime!),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.timer, size: 16, color: Color(0xFF000)),
+                const SizedBox(width: 6),
+                Text(
+                  'Duração: ${hours}h ${minutes}min',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF000),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
-  }
-
-  IconData _getIconForRecordType(RecordType type) {
-    switch (type) {
-      case RecordType.entrada:
-        return Icons.login;
-      case RecordType.saida:
-        return Icons.logout;
-      case RecordType.inicioPausa:
-        return Icons.pause_circle;
-      case RecordType.fimPausa:
-        return Icons.play_circle;
-    }
-  }
-
-  Color _getColorForRecordType(RecordType type) {
-    switch (type) {
-      case RecordType.entrada:
-        return Colors.green;
-      case RecordType.saida:
-        return Colors.red;
-      case RecordType.inicioPausa:
-        return Colors.orange;
-      case RecordType.fimPausa:
-        return Colors.blue;
-    }
   }
 }

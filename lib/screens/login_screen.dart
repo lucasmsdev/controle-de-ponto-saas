@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Icon(
                     Icons.access_time,
                     size: 80,
-                    color: Colors.blue,
+                    color: Color(0xFF14a25c),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -82,6 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      color: Color(0xFF000),
                     ),
                   ),
                   const SizedBox(height: 48),
@@ -126,7 +127,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Text(
                             'Entrar',
@@ -138,12 +142,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   const Text(
                     'Usuários de teste:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF000),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Text('Admin: admin@empresa.com / admin123'),
-                  const Text('Gerente: gerente@empresa.com / gerente123'),
-                  const Text('Funcionário: funcionario@empresa.com / func123'),
+                  Text(
+                    'Admin: admin@empresa.com / admin123',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                  Text(
+                    'Gerente: gerente@empresa.com / gerente123',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                  Text(
+                    'Funcionário: funcionario@empresa.com / func123',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
                 ],
               ),
             ),

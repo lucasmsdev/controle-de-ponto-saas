@@ -53,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Perfil atualizado com sucesso'),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF14a25c),
       ),
     );
   }
@@ -185,14 +185,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: const Color(0xFF14a25c).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFF14a25c),
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               _getRoleIcon(user.role),
-                              color: Colors.blue,
+                              color: const Color(0xFF14a25c),
                             ),
                             const SizedBox(width: 12),
                             Text(
@@ -200,7 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.blue,
+                                color: Color(0xFF000),
                               ),
                             ),
                           ],
