@@ -7,9 +7,51 @@ import 'services/supabase_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  await SupabaseService.initialize();
+  try {
+    await SupabaseService.initialize();
+    runApp(const ControlePontoApp());
+  } catch (e) {
+    print('Erro ao inicializar app: $e');
+    runApp(ErrorApp(error: e.toString()));
+  }
+}
+
+/// App de erro caso a inicialização falhe
+class ErrorApp extends StatelessWidget {
+  final String error;
   
-  runApp(const ControlePontoApp());
+  const ErrorApp({super.key, required this.error});
+  
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.red.shade900,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 80, color: Colors.white),
+                const SizedBox(height: 24),
+                const Text(
+                  'Erro ao Inicializar',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  error,
+                  style: const TextStyle(color: Colors.white70),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Widget raiz do aplicativo com suporte a tema claro/escuro

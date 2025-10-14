@@ -16,10 +16,23 @@ class SupabaseService {
     const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
     const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-    await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey: supabaseAnonKey,
-    );
+    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+      print('ERRO: Credenciais do Supabase não configuradas!');
+      print('SUPABASE_URL: ${supabaseUrl.isEmpty ? "VAZIO" : "OK"}');
+      print('SUPABASE_ANON_KEY: ${supabaseAnonKey.isEmpty ? "VAZIO" : "OK"}');
+      throw Exception('Credenciais do Supabase não configuradas');
+    }
+
+    try {
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey,
+      );
+      print('Supabase inicializado com sucesso');
+    } catch (e) {
+      print('ERRO ao inicializar Supabase: $e');
+      rethrow;
+    }
   }
 
   Future<app_user.User?> login(String email, String password) async {

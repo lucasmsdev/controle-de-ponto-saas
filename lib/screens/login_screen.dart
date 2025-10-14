@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import '../services/data_service.dart';
 import 'dashboard_screen.dart';
 import 'admin_registration_screen.dart';
 
@@ -39,6 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (user != null) {
+      // Sincroniza o usuário logado com o DataService
+      final dataService = DataService();
+      dataService.currentUser = user;
+      
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
