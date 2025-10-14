@@ -92,36 +92,120 @@ class DataService {
     timeRecords.removeWhere((r) => r.userId == userId);
   }
 
-  /// Adiciona um registro de ponto
-  TimeRecord addTimeRecord({
+  /// Inicia um novo período (trabalho ou pausa)
+  TimeRecord startPeriod({
     required String userId,
-    required DateTime timestamp,
     required RecordType type,
-    String? photoPath,
-    bool isManual = false,
   }) {
     final record = TimeRecord(
       id: (_recordIdCounter++).toString(),
       userId: userId,
-      timestamp: timestamp,
+      startTime: DateTime.now(),
       type: type,
-      photoPath: photoPath,
-      isManual: isManual,
     );
     timeRecords.add(record);
     return record;
   }
 
+  /// Encerra o período ativo atual (trabalho ou pausa)
+  TimeRecord? stopActivePeriod({
+    required String userId,
+    required RecordType type,
+  }) {
+    // Encontra o registro ativo do tipo especificado
+    final activeRecord = timeRecords.firstWhere(
+      (r) => r.userId == userId && r.type == type && r.isActive,
+      orElse: () => throw Exception('Nenhum período ativo encontrado'),
+    );
+
+    // Atualiza o registro com o horário de término
+    final updatedRecord = activeRecord.copyWith(
+      endTime: DateTime.now(),
+    );
+
+    // Substitui o registro antigo pelo atualizado
+    final index = timeRecords.indexOf(activeRecord);
+    timeRecords[index] = updatedRecord;
+
+    return updatedRecord;
+  }
+
+  /// Verifica se há um período ativo para o usuário
+  bool hasActivePeriod({
+    required String userId,
+    required RecordType type,
+  }) {
+    return timeRecords.any(
+      (r) => r.userId == userId && r.type == type && r.isActive,
+    );
+  }
+
+  /// Obtém o registro ativo atual (se houver)
+  TimeRecord? getActivePeriod({
+    required String userId,
+    required RecordType type,
+  }) {
+    try {
+      return timeRecords.firstWhere(
+        (r) => r.userId == userId && r.type == type && r.isActive,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Obtém registros de um usuário específico
   List<TimeRecord> getUserRecords(String userId) {
     return timeRecords.where((r) => r.userId == userId).toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      ..sort((a, b) => b.startTime.compareTo(a.startTime));
   }
 
   /// Obtém todos os registros (ordenados por data)
   List<TimeRecord> getAllRecords() {
     return List.from(timeRecords)
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+  }
+
+  /// Calcula o resumo diário para um usuário em uma data específica
+  DailySummary getDailySummary(String userId, DateTime date) {
+    // Filtra registros do usuário na data especificada
+    final dayRecords = timeRecords.where((r) {
+      return r.userId == userId &&
+          r.startTime.year == date.year &&
+          r.startTime.month == date.month &&
+          r.startTime.day == date.day;
+    }).toList();
+
+    double totalWorkHours = 0;
+    double totalBreakHours = 0;
+
+    // Calcula total de horas por tipo
+    for (final record in dayRecords) {
+      // Ignora registros ainda ativos para o cálculo
+      if (!record.isActive) {
+        if (record.type == RecordType.trabalho) {
+          totalWorkHours += record.durationInHours;
+        } else {
+          totalBreakHours += record.durationInHours;
+        }
+      }
+    }
+
+    // Calcula horas líquidas (trabalho - pausa)
+    final netWorkHours = totalWorkHours - totalBreakHours;
+
+    return DailySummary(
+      userId: userId,
+      date: date,
+      totalWorkHours: totalWorkHours,
+      totalBreakHours: totalBreakHours,
+      netWorkHours: netWorkHours,
+    );
+  }
+
+  /// Obtém lista de todos os funcionários
+  List<User> getEmployees() {
+    return users.where((u) => u.role == UserRole.funcionario).toList();
   }
 
   /// Verifica se o usuário atual tem permissão de admin ou gerente
