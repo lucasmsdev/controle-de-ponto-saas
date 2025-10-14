@@ -222,4 +222,68 @@ class DataService {
   bool get isAdmin {
     return currentUser?.role == UserRole.admin;
   }
+
+  /// Adiciona um registro manual (com horários específicos)
+  TimeRecord addManualRecord({
+    required String userId,
+    required DateTime startTime,
+    required DateTime endTime,
+    required RecordType type,
+  }) {
+    final record = TimeRecord(
+      id: (_recordIdCounter++).toString(),
+      userId: userId,
+      startTime: startTime,
+      endTime: endTime,
+      type: type,
+    );
+    timeRecords.add(record);
+    return record;
+  }
+
+  /// Edita um registro existente
+  void updateRecord(TimeRecord updatedRecord) {
+    final index = timeRecords.indexWhere((r) => r.id == updatedRecord.id);
+    if (index != -1) {
+      timeRecords[index] = updatedRecord;
+    }
+  }
+
+  /// Remove um registro
+  void deleteRecord(String recordId) {
+    timeRecords.removeWhere((r) => r.id == recordId);
+  }
+
+  /// Verifica se o funcionário já fez lançamento manual hoje
+  bool hasManualRecordToday(String userId) {
+    final today = DateTime.now();
+    return timeRecords.any((r) {
+      return r.userId == userId &&
+          r.startTime.year == today.year &&
+          r.startTime.month == today.month &&
+          r.startTime.day == today.day &&
+          r.endTime != null; // Apenas registros completos (manuais ou finalizados)
+    });
+  }
+
+  /// Obtém registros dos últimos N dias
+  List<TimeRecord> getRecordsLastDays(int days, {String? userId}) {
+    final cutoffDate = DateTime.now().subtract(Duration(days: days));
+    
+    var records = timeRecords.where((r) {
+      return r.startTime.isAfter(cutoffDate);
+    }).toList();
+    
+    if (userId != null) {
+      records = records.where((r) => r.userId == userId).toList();
+    }
+    
+    return records..sort((a, b) => b.startTime.compareTo(a.startTime));
+  }
+
+  /// Verifica se um registro pode ser editado (últimos 30 dias)
+  bool canEditRecord(TimeRecord record) {
+    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+    return record.startTime.isAfter(thirtyDaysAgo);
+  }
 }

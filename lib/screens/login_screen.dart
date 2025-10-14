@@ -70,19 +70,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.access_time,
                     size: 80,
-                    color: Color(0xFF14a25c),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Controle de Ponto',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF000),
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                   const SizedBox(height: 48),

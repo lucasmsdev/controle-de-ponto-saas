@@ -4,7 +4,7 @@
 
 Aplicativo Flutter web para controle de horários de trabalho e pausas de funcionários com botões simples de start/stop. O sistema suporta 3 tipos de usuários (Admin, Gerente e Funcionário) com diferentes níveis de permissão e oferece resumos diários detalhados.
 
-**Status:** ✅ Completamente funcional  
+**Status:** ✅ Completamente funcional com modo claro/escuro  
 **Última atualização:** 14 de outubro de 2025
 
 ## Preferências do Usuário
@@ -15,9 +15,15 @@ Aplicativo Flutter web para controle de horários de trabalho e pausas de funcio
 
 ## Cores do Sistema
 
-- **Principal:** #14a25c (verde) - Trabalho e ações principais
-- **Secundário:** #f28b4f (laranja) - Pausas e ações secundárias
-- **Preto:** #000 - Textos e informações importantes
+- **Azul Escuro:** #1E3A8A - Cor principal (botões, AppBar, destaques)
+- **Preto:** #000 - Texto principal no modo claro
+- **Branco:** #FFF - Fundo no modo claro, texto no modo escuro
+- **Cinza Escuro:** #1F2937 - Fundo de cards no modo escuro
+
+### Modo Claro e Escuro
+- ☀️ **Modo Claro:** Fundo branco, textos pretos, botões azul escuro
+- 🌙 **Modo Escuro:** Fundo preto, textos brancos, cards cinza escuro
+- Toggle disponível no AppBar do Dashboard
 
 ## Funcionalidades Implementadas
 
@@ -25,7 +31,7 @@ Aplicativo Flutter web para controle de horários de trabalho e pausas de funcio
 - Autenticação com email e senha
 - Suporte para 3 tipos de usuários: Admin, Gerente e Funcionário
 - Usuários de teste pré-cadastrados
-- Design com cores personalizadas
+- Design adaptativo com cores do tema
 
 ### 📊 Dashboard (Tela Principal)
 
@@ -37,7 +43,8 @@ Aplicativo Flutter web para controle de horários de trabalho e pausas de funcio
   - Total de horas em pausa
   - Horas líquidas (trabalho - pausas)
 - **Indicador de Status:** Mostra se está trabalhando, em pausa ou fora do expediente
-- Acesso ao histórico pessoal
+- **Lançamento Manual:** Pode lançar um horário manual por dia
+- Acesso ao histórico pessoal dos últimos 30 dias
 
 **Para Admin/Gerente:**
 - **Resumo de Todos os Funcionários:** Visualização granular separada por funcionário
@@ -46,16 +53,41 @@ Aplicativo Flutter web para controle de horários de trabalho e pausas de funcio
   - Total trabalhado no dia
   - Total de pausas no dia
   - Horas líquidas
+- **Lançamento Manual Ilimitado:** Pode lançar horários para qualquer funcionário
+- **Edição de Registros:** Pode editar/deletar registros dos últimos 30 dias
 - Acesso à administração de usuários
 - Visualização de histórico completo
 
-### 📋 Histórico de Pontos
-- Lista todos os períodos registrados (trabalho e pausas)
+### 📝 Lançamento Manual de Horários
+
+**Para Funcionários:**
+- Pode lançar **um horário manual por dia**
+- Seleciona data (últimos 30 dias), horário de início e fim
+- Escolhe tipo: Trabalho ou Pausa
+- Sistema valida se já lançou manual no dia
+
+**Para Admin/Gerente:**
+- Lançamento ilimitado para qualquer funcionário
+- Mesma interface de seleção de data e horários
+- Dropdown para escolher o funcionário
+
+### 📋 Histórico de Pontos (30 Dias)
+- Lista todos os períodos registrados dos **últimos 30 dias**
 - Mostra data de início e fim de cada período
 - Exibe duração calculada (horas e minutos)
 - Indica períodos ainda em andamento
 - Filtro por usuário (para Admin/Gerente)
-- Cores diferenciadas por tipo (trabalho = verde, pausa = laranja)
+- Cores diferenciadas por tipo (trabalho = azul, pausa = preto)
+- **Botão de editar** para gerentes (registros dos últimos 30 dias)
+
+### ✏️ Edição de Registros (Admin/Gerente)
+
+**Funcionalidades:**
+- Editar data, horário de início, horário de fim e tipo
+- Deletar registros com confirmação
+- Apenas registros dos **últimos 30 dias** podem ser editados
+- Mostra informações do funcionário
+- Validações de horário (fim > início)
 
 ### 👥 Administração (Admin/Gerente)
 - Listar todos os usuários
@@ -68,22 +100,25 @@ Aplicativo Flutter web para controle de horários de trabalho e pausas de funcio
 - Visualização de dados pessoais
 - Edição de perfil (funcionários)
 - Exibição do tipo de usuário
-- Design com cores do sistema
+- Design com cores do tema
 
 ## Estrutura do Projeto
 
 ```
 lib/
-├── main.dart                      # Ponto de entrada com tema personalizado
+├── main.dart                      # Ponto de entrada com suporte a tema
 ├── models/
 │   ├── user.dart                  # Modelo de dados de usuário
 │   └── time_record.dart           # Modelo de registro (start/stop + cálculos)
 ├── services/
-│   └── data_service.dart          # Gerenciamento de dados e cálculos
+│   ├── data_service.dart          # Gerenciamento de dados e cálculos
+│   └── theme_service.dart         # Gerenciamento de tema claro/escuro
 └── screens/
     ├── login_screen.dart          # Tela de login
     ├── dashboard_screen.dart      # Dashboard com start/stop e resumos
-    ├── history_screen.dart        # Histórico de períodos
+    ├── manual_entry_screen.dart   # Lançamento manual de horários
+    ├── history_screen.dart        # Histórico dos últimos 30 dias
+    ├── edit_record_screen.dart    # Edição de registros (gerente)
     ├── admin_screen.dart          # Administração
     └── profile_screen.dart        # Perfil do usuário
 ```
@@ -92,7 +127,7 @@ lib/
 
 ### Framework
 - **Flutter 3.22.0** com Dart 3.4.0
-- Material Design (Material 3)
+- Material Design (Material 3) com tema dinâmico
 
 ### Pacotes
 - `intl` ^0.18.0 - Formatação de datas e horas
@@ -113,7 +148,7 @@ lib/
 **TimeRecord:**
 - id, userId, startTime, endTime (null = em andamento)
 - type (trabalho ou pausa)
-- Métodos: isActive, durationInMinutes, durationInHours
+- Métodos: isActive, durationInMinutes, durationInHours, copyWith
 
 **DailySummary:**
 - userId, date
@@ -131,11 +166,26 @@ lib/
 - `getActivePeriod()` - Obtém o período ativo atual
 - `getDailySummary()` - Calcula resumo diário de um usuário
 - `getEmployees()` - Lista todos os funcionários
+- `addManualRecord()` - Adiciona registro manual com horários específicos
+- `updateRecord()` - Atualiza um registro existente
+- `deleteRecord()` - Remove um registro
+- `hasManualRecordToday()` - Verifica se funcionário já lançou manual hoje
+- `getRecordsLastDays()` - Obtém registros dos últimos N dias
+- `canEditRecord()` - Verifica se registro pode ser editado (30 dias)
+
+### Gerenciamento de Tema (ThemeService)
+
+**Funcionalidades:**
+- Modo claro e escuro
+- Toggle entre modos
+- Cores personalizadas (azul escuro, preto, branco)
+- Suporte a Material 3
+- Listener para mudanças de tema
 
 ### Controle de Permissões
 - **Admin**: Acesso total, pode deletar usuários
-- **Gerente**: Administração de usuários, visualização de todos os funcionários
-- **Funcionário**: Apenas registros pessoais e perfil próprio
+- **Gerente**: Administração de usuários, edição de registros, lançamento ilimitado
+- **Funcionário**: Apenas registros pessoais, um lançamento manual por dia
 
 ## Configuração de Desenvolvimento
 
@@ -168,34 +218,55 @@ O script `run_web.sh`:
 
 ### Para Funcionários
 
+**Registro Automático (Start/Stop):**
 1. **Iniciar Trabalho:** Clica em "Iniciar Trabalho"
    - Sistema registra horário de início
    - Botão "Parar Trabalho" fica habilitado
    - Botões de pausa ficam habilitados
-
 2. **Fazer Pausa:** Durante o trabalho, clica em "Iniciar Pausa"
    - Sistema registra início da pausa
    - Tempo de pausa não conta como trabalho
-   - Botão "Retornar ao Trabalho" fica habilitado
-
 3. **Retornar da Pausa:** Clica em "Retornar ao Trabalho"
    - Sistema finaliza a pausa
    - Volta ao estado de trabalhando
-
 4. **Finalizar Trabalho:** Clica em "Parar Trabalho"
    - Sistema registra horário de fim
    - Calcula duração total
    - Atualiza resumo diário
 
+**Lançamento Manual (Uma vez por dia):**
+1. Clica em "Lançamento Manual de Horário"
+2. Seleciona tipo (Trabalho ou Pausa)
+3. Escolhe data (últimos 30 dias)
+4. Define horário de início e fim
+5. Salva registro
+6. **Limitação:** Apenas um lançamento manual por dia
+
 ### Para Admin/Gerente
 
-1. **Visualizar Funcionários:** Dashboard mostra todos os funcionários separadamente
-2. **Ver Resumos:** Para cada funcionário vê:
+**Visualização:**
+1. Dashboard mostra todos os funcionários separadamente
+2. Para cada funcionário vê:
    - Quantas horas trabalhou hoje
    - Quanto tempo ficou em pausa
    - Quantas horas líquidas (trabalho - pausa)
-3. **Administrar:** Pode criar, editar e deletar usuários
-4. **Histórico:** Pode filtrar e ver histórico de qualquer funcionário
+
+**Lançamento Manual (Ilimitado):**
+1. Acessa "Lançamento Manual de Horário"
+2. Seleciona o funcionário (dropdown)
+3. Define tipo, data e horários
+4. Salva sem limitação de quantidade
+
+**Edição de Registros:**
+1. Acessa "Ver Histórico Completo"
+2. Filtra por funcionário (opcional)
+3. Clica no ícone de editar em qualquer registro dos últimos 30 dias
+4. Modifica data, horários ou tipo
+5. Pode deletar o registro com confirmação
+
+**Administração:**
+- Criar, editar e deletar usuários
+- Ver histórico completo filtrado
 
 ## Cálculos Automáticos
 
@@ -219,6 +290,31 @@ O resumo mostra:
 - Total Trabalhado: 8h 0min
 - Total de Pausas: 1h 0min
 - Horas Líquidas: 7h 0min
+
+## Regras de Negócio
+
+### Lançamento Manual
+1. **Funcionários:** 
+   - Máximo de 1 lançamento manual por dia
+   - Podem lançar apenas para si mesmos
+   - Data limitada aos últimos 30 dias
+2. **Gerentes/Admin:**
+   - Lançamentos ilimitados
+   - Podem lançar para qualquer funcionário
+   - Data limitada aos últimos 30 dias
+
+### Edição de Registros
+1. **Apenas gerentes/admin** podem editar
+2. Apenas registros dos **últimos 30 dias**
+3. Podem modificar: data, horários, tipo
+4. Podem deletar com confirmação
+5. Validação: horário de fim > horário de início
+
+### Histórico
+1. Mostra registros dos **últimos 30 dias**
+2. Funcionários veem apenas seus registros
+3. Gerentes/admin veem todos, com filtro opcional
+4. Registros ativos marcados como "Em Andamento"
 
 ## Armazenamento de Dados
 
@@ -246,6 +342,8 @@ O resumo mostra:
 - [ ] Notificações (lembrete de registrar ponto)
 - [ ] Geolocalização (verificar se está no local de trabalho)
 - [ ] Justificativas para ausências
+- [ ] Histórico completo (mais de 30 dias)
+- [ ] Aprovação de lançamentos manuais
 
 ### Mobile
 - [ ] Build e testes Android/iOS
@@ -253,6 +351,17 @@ O resumo mostra:
 - [ ] Modo offline com sincronização
 
 ## Histórico de Desenvolvimento
+
+**14/10/2025 - Versão 3.0:**
+- ✅ Mudança completa de cores (preto, branco, azul escuro)
+- ✅ Implementado modo claro e modo escuro com toggle
+- ✅ Adicionado lançamento manual de horários:
+  - Funcionários: 1 por dia
+  - Gerentes: ilimitado para qualquer funcionário
+- ✅ Histórico filtrado para últimos 30 dias
+- ✅ Edição e exclusão de registros (gerentes, últimos 30 dias)
+- ✅ ThemeService para gerenciamento de tema
+- ✅ Validações de regras de negócio
 
 **14/10/2025 - Versão 2.0:**
 - ✅ Removida funcionalidade de foto
@@ -273,14 +382,28 @@ O resumo mostra:
 
 ### Cores no Código
 ```dart
-// Principal (Verde)
-Color(0xFF14a25c)
-
-// Secundário (Laranja)
-Color(0xFFf28b4f)
+// Azul Escuro (Principal)
+Color(0xFF1E3A8A)
 
 // Preto
-Color(0xFF000)
+Color(0xFF000000)
+
+// Branco
+Color(0xFFFFFFFF)
+
+// Cinza Escuro (Cards modo escuro)
+Color(0xFF1F2937)
+```
+
+### Tema Dinâmico
+```dart
+// Acesso ao tema atual
+Theme.of(context).colorScheme.primary
+Theme.of(context).colorScheme.onSurface
+
+// Toggle de tema
+final themeService = ThemeService();
+themeService.toggleTheme();
 ```
 
 ### Compatibilidade Web

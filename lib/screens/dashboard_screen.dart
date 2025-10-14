@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/data_service.dart';
+import '../services/theme_service.dart';
 import '../models/user.dart';
 import '../models/time_record.dart';
 import 'history_screen.dart';
 import 'admin_screen.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
+import 'manual_entry_screen.dart';
 
 /// Tela principal (Dashboard) do sistema
 class DashboardScreen extends StatefulWidget {
@@ -18,6 +20,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _dataService = DataService();
+  final _themeService = ThemeService();
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +31,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          // Toggle de modo claro/escuro
+          IconButton(
+            icon: Icon(_themeService.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () {
+              setState(() {
+                _themeService.toggleTheme();
+              });
+            },
+            tooltip: _themeService.isDarkMode ? 'Modo Claro' : 'Modo Escuro',
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
@@ -66,7 +79,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Text(
                       'Bem-vindo, ${user.name}!',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: const Color(0xFF000),
                             fontWeight: FontWeight.bold,
                           ),
                     ),
@@ -74,7 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Text(
                       'Perfil: ${user.role.displayName}',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey[700],
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
                           ),
                     ),
                   ],
@@ -92,8 +104,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: 24),
             
-            // Botão de histórico
+            // Botão de lançamento manual
             ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ManualEntryScreen(),
+                  ),
+                ).then((_) => setState(() {}));
+              },
+              icon: const Icon(Icons.edit_calendar),
+              label: const Text('Lançamento Manual de Horário'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Botão de histórico
+            OutlinedButton.icon(
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -103,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
               icon: const Icon(Icons.history),
               label: const Text('Ver Histórico Completo'),
-              style: ElevatedButton.styleFrom(
+              style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.all(16),
               ),
             ),
@@ -134,12 +163,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 24),
 
         // Botões de controle
-        const Text(
+        Text(
           'Controle de Ponto',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF000),
+            color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
         const SizedBox(height: 16),
@@ -158,18 +187,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                         setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Trabalho iniciado!'),
-                            backgroundColor: Color(0xFF14a25c),
+                          SnackBar(
+                            content: const Text('Trabalho iniciado!'),
+                            backgroundColor: Theme.of(context).colorScheme.primary,
                           ),
                         );
                       },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('Iniciar\nTrabalho'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: hasActiveWork
-                      ? Colors.grey
-                      : const Color(0xFF14a25c),
+                  backgroundColor: hasActiveWork ? Colors.grey : null,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                 ),
               ),
@@ -186,9 +213,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                         setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Trabalho finalizado!'),
-                            backgroundColor: Color(0xFFf28b4f),
+                          SnackBar(
+                            content: const Text('Trabalho finalizado!'),
+                            backgroundColor: Theme.of(context).colorScheme.secondary,
                           ),
                         );
                       },
@@ -197,7 +224,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: !hasActiveWork
                       ? Colors.grey
-                      : const Color(0xFFf28b4f),
+                      : Theme.of(context).colorScheme.secondary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                 ),
@@ -221,17 +248,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                         setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pausa iniciada!'),
-                            backgroundColor: Color(0xFFf28b4f),
+                          SnackBar(
+                            content: const Text('Pausa iniciada!'),
+                            backgroundColor: Theme.of(context).colorScheme.secondary,
                           ),
                         );
                       },
                 icon: const Icon(Icons.pause),
                 label: const Text('Iniciar\nPausa'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF000),
-                  side: const BorderSide(color: Color(0xFFf28b4f), width: 2),
                   padding: const EdgeInsets.symmetric(vertical: 20),
                 ),
               ),
@@ -248,17 +273,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                         setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pausa finalizada!'),
-                            backgroundColor: Color(0xFF14a25c),
+                          SnackBar(
+                            content: const Text('Pausa finalizada!'),
+                            backgroundColor: Theme.of(context).colorScheme.primary,
                           ),
                         );
                       },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('Retornar ao\nTrabalho'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF000),
-                  side: const BorderSide(color: Color(0xFF14a25c), width: 2),
                   padding: const EdgeInsets.symmetric(vertical: 20),
                 ),
               ),
@@ -273,13 +296,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           decoration: BoxDecoration(
             color: hasActiveWork
                 ? (hasActiveBreak
-                    ? const Color(0xFFf28b4f).withOpacity(0.1)
-                    : const Color(0xFF14a25c).withOpacity(0.1))
+                    ? Theme.of(context).colorScheme.secondary.withOpacity(0.1)
+                    : Theme.of(context).colorScheme.primary.withOpacity(0.1))
                 : Colors.grey[200],
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: hasActiveWork
-                  ? (hasActiveBreak ? const Color(0xFFf28b4f) : const Color(0xFF14a25c))
+                  ? (hasActiveBreak 
+                      ? Theme.of(context).colorScheme.secondary 
+                      : Theme.of(context).colorScheme.primary)
                   : Colors.grey,
               width: 2,
             ),
@@ -292,7 +317,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ? (hasActiveBreak ? Icons.pause_circle : Icons.work)
                     : Icons.info_outline,
                 color: hasActiveWork
-                    ? (hasActiveBreak ? const Color(0xFFf28b4f) : const Color(0xFF14a25c))
+                    ? (hasActiveBreak 
+                        ? Theme.of(context).colorScheme.secondary 
+                        : Theme.of(context).colorScheme.primary)
                     : Colors.grey,
               ),
               const SizedBox(width: 8),
@@ -304,7 +331,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: hasActiveWork
-                      ? const Color(0xFF000)
+                      ? Theme.of(context).colorScheme.onSurface
                       : Colors.grey[700],
                 ),
               ),
@@ -340,12 +367,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 24),
 
         // Título
-        const Text(
+        Text(
           'Resumo de Todos os Funcionários',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF000),
+            color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
         const SizedBox(height: 8),
@@ -386,7 +413,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Card de resumo diário individual
   Widget _buildDailySummaryCard(DailySummary summary) {
     return Card(
-      color: const Color(0xFF14a25c).withOpacity(0.05),
+      color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -394,14 +421,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.today, color: Color(0xFF14a25c)),
+                Icon(Icons.today, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Resumo de Hoje',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF000),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -411,14 +438,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               'Total Trabalhado:',
               DailySummary.formatHours(summary.totalWorkHours),
               Icons.work,
-              const Color(0xFF14a25c),
+              Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 12),
             _buildSummaryRow(
               'Total de Pausas:',
               DailySummary.formatHours(summary.totalBreakHours),
               Icons.pause_circle,
-              const Color(0xFFf28b4f),
+              Theme.of(context).colorScheme.secondary,
             ),
             const SizedBox(height: 12),
             const Divider(),
@@ -427,7 +454,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               'Horas Líquidas:',
               DailySummary.formatHours(summary.netWorkHours),
               Icons.check_circle,
-              const Color(0xFF14a25c),
+              Theme.of(context).colorScheme.primary,
               isBold: true,
             ),
           ],
@@ -448,7 +475,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF14a25c),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   child: Text(
                     employee.name[0].toUpperCase(),
                     style: const TextStyle(
@@ -464,10 +491,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         employee.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF000),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       Text(
@@ -489,17 +516,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _buildCompactSummary(
                   'Trabalhado',
                   DailySummary.formatHours(summary.totalWorkHours),
-                  const Color(0xFF14a25c),
+                  Theme.of(context).colorScheme.primary,
                 ),
                 _buildCompactSummary(
                   'Pausas',
                   DailySummary.formatHours(summary.totalBreakHours),
-                  const Color(0xFFf28b4f),
+                  Theme.of(context).colorScheme.secondary,
                 ),
                 _buildCompactSummary(
                   'Líquido',
                   DailySummary.formatHours(summary.netWorkHours),
-                  const Color(0xFF000),
+                  Theme.of(context).colorScheme.primary,
                 ),
               ],
             ),
