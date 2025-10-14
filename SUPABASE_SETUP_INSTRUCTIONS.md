@@ -25,11 +25,17 @@ Para que o aplicativo funcione com o Supabase, você precisa criar as tabelas no
 
 ### O que o script faz:
 
-- ✅ Cria a tabela `users` (usuários)
-- ✅ Cria a tabela `time_records` (registros de ponto)
+- ✅ Cria a tabela `users` (usuários com email único)
+- ✅ Cria a tabela `time_records` (registros de ponto com flag is_manual)
 - ✅ Adiciona índices para melhorar a performance
 - ✅ Insere os 3 usuários de teste (admin, gerente e funcionário)
 - ✅ Configura políticas de segurança (RLS)
+
+**Importante:** A tabela `time_records` possui um campo `is_manual` que diferencia:
+- Registros automáticos (start/stop) → `is_manual: false`
+- Registros manuais (lançamentos) → `is_manual: true`
+
+Isso garante que funcionários não sejam bloqueados após registros normais de trabalho.
 
 ### Usuários de Teste Criados:
 
