@@ -4,6 +4,23 @@
 
 A Flutter web application designed for managing employee work and break times, featuring simple start/stop buttons. The system supports three user types (Admin, Manager, Employee) with distinct permission levels and provides detailed daily summaries. It is fully integrated with Supabase for data persistence using PostgreSQL. The project aims to streamline time tracking, improve accountability, and offer comprehensive reporting for workforce management.
 
+## Recent Changes (Outubro 2025)
+
+### Correções Críticas de Login
+- **Problema Resolvido:** Tela cinza após login (DataService.currentUser null)
+- **Solução:** Sincronização automática entre SupabaseService e DataService após autenticação
+- **Implementação:** LoginScreen agora seta currentUser no DataService após login bem-sucedido no Supabase
+
+### Melhorias de Tratamento de Erros
+- **SupabaseService.initialize():** Validação de credenciais, logs de debug, propagação adequada de exceções
+- **main.dart:** Try-catch global com ErrorApp mostrando mensagens amigáveis em caso de falha na inicialização
+- **Prevenção:** Tela cinza agora substituída por tela de erro informativa
+
+### Integração Supabase
+- **Detecção de Duplicados:** Validação em tempo real de emails duplicados no cadastro
+- **Flag is_manual:** Diferenciação entre registros automáticos (start/stop) e manuais
+- **Mensagens Específicas:** Erros de constraint unique retornam mensagens claras para o usuário
+
 ## User Preferences
 
 - Comunicação: Linguagem simples e cotidiana
