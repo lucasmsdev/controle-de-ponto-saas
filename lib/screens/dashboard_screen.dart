@@ -145,200 +145,220 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Conteúdo para funcionários: botões start/stop e resumo pessoal
   Widget _buildEmployeeContent() {
     final userId = _dataService.currentUser!.id;
-    final hasActiveWork = _dataService.hasActivePeriod(
-      userId: userId,
-      type: RecordType.trabalho,
-    );
-    final hasActiveBreak = _dataService.hasActivePeriod(
-      userId: userId,
-      type: RecordType.pausa,
-    );
-    final summary = _dataService.getDailySummary(userId, DateTime.now());
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Resumo diário do funcionário
-        _buildDailySummaryCard(summary),
-        const SizedBox(height: 24),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: Future.wait([
+        _dataService.hasActivePeriod(userId: userId, type: RecordType.trabalho),
+        _dataService.hasActivePeriod(userId: userId, type: RecordType.pausa),
+        _dataService.getDailySummary(userId, DateTime.now()),
+      ]).then((results) => {
+        'hasActiveWork': results[0],
+        'hasActiveBreak': results[1],
+        'summary': results[2],
+      }),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        // Botões de controle
-        Text(
-          'Controle de Ponto',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onBackground,
-          ),
-        ),
-        const SizedBox(height: 16),
+        final hasActiveWork = snapshot.data!['hasActiveWork'] as bool;
+        final hasActiveBreak = snapshot.data!['hasActiveBreak'] as bool;
+        final summary = snapshot.data!['summary'] as DailySummary;
 
-        // Botões de Trabalho
-        Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: hasActiveWork
-                    ? null
-                    : () {
-                        _dataService.startPeriod(
-                          userId: userId,
-                          type: RecordType.trabalho,
-                        );
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Trabalho iniciado!'),
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                          ),
-                        );
-                      },
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Iniciar\nTrabalho'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: hasActiveWork ? Colors.grey : null,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: !hasActiveWork
-                    ? null
-                    : () {
-                        _dataService.stopActivePeriod(
-                          userId: userId,
-                          type: RecordType.trabalho,
-                        );
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Trabalho finalizado!'),
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
-                          ),
-                        );
-                      },
-                icon: const Icon(Icons.stop),
-                label: const Text('Parar\nTrabalho'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: !hasActiveWork
-                      ? Colors.grey
-                      : Theme.of(context).colorScheme.secondary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+            // Resumo diário do funcionário
+            _buildDailySummaryCard(summary),
+            const SizedBox(height: 24),
 
-        // Botões de Pausa
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: hasActiveBreak || !hasActiveWork
-                    ? null
-                    : () {
-                        _dataService.startPeriod(
-                          userId: userId,
-                          type: RecordType.pausa,
-                        );
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Pausa iniciada!'),
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
-                          ),
-                        );
-                      },
-                icon: const Icon(Icons.pause),
-                label: const Text('Iniciar\nPausa'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                ),
+            // Botões de controle
+            Text(
+              'Controle de Ponto',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: !hasActiveBreak
-                    ? null
-                    : () {
-                        _dataService.stopActivePeriod(
-                          userId: userId,
-                          type: RecordType.pausa,
-                        );
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Pausa finalizada!'),
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                          ),
-                        );
-                      },
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Retornar ao\nTrabalho'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                ),
-              ),
-            ),
-          ],
-        ),
+            const SizedBox(height: 16),
 
-        // Indicador de status
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: hasActiveWork
-                ? (hasActiveBreak
-                    ? Theme.of(context).colorScheme.secondary.withOpacity(0.1)
-                    : Theme.of(context).colorScheme.primary.withOpacity(0.1))
-                : Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: hasActiveWork
-                  ? (hasActiveBreak 
-                      ? Theme.of(context).colorScheme.secondary 
-                      : Theme.of(context).colorScheme.primary)
-                  : Colors.grey,
-              width: 2,
+            // Botões de Trabalho
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: hasActiveWork
+                        ? null
+                        : () async {
+                            await _dataService.startPeriod(
+                              userId: userId,
+                              type: RecordType.trabalho,
+                            );
+                            setState(() {});
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Trabalho iniciado!'),
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Iniciar\nTrabalho'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: hasActiveWork ? Colors.grey : null,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: !hasActiveWork
+                        ? null
+                        : () async {
+                            await _dataService.stopActivePeriod(
+                              userId: userId,
+                              type: RecordType.trabalho,
+                            );
+                            setState(() {});
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Trabalho finalizado!'),
+                                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.stop),
+                    label: const Text('Parar\nTrabalho'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: !hasActiveWork
+                          ? Colors.grey
+                          : Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                hasActiveWork
-                    ? (hasActiveBreak ? Icons.pause_circle : Icons.work)
-                    : Icons.info_outline,
+            const SizedBox(height: 12),
+
+            // Botões de Pausa
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: hasActiveBreak || !hasActiveWork
+                        ? null
+                        : () async {
+                            await _dataService.startPeriod(
+                              userId: userId,
+                              type: RecordType.pausa,
+                            );
+                            setState(() {});
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Pausa iniciada!'),
+                                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.pause),
+                    label: const Text('Iniciar\nPausa'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: !hasActiveBreak
+                        ? null
+                        : () async {
+                            await _dataService.stopActivePeriod(
+                              userId: userId,
+                              type: RecordType.pausa,
+                            );
+                            setState(() {});
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Pausa finalizada!'),
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Retornar ao\nTrabalho'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Indicador de status
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
                 color: hasActiveWork
-                    ? (hasActiveBreak 
-                        ? Theme.of(context).colorScheme.secondary 
-                        : Theme.of(context).colorScheme.primary)
-                    : Colors.grey,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                hasActiveWork
-                    ? (hasActiveBreak ? 'Em Pausa' : 'Trabalhando')
-                    : 'Fora do Expediente',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                    ? (hasActiveBreak
+                        ? Theme.of(context).colorScheme.secondary.withOpacity(0.1)
+                        : Theme.of(context).colorScheme.primary.withOpacity(0.1))
+                    : Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
                   color: hasActiveWork
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Colors.grey[700],
+                      ? (hasActiveBreak 
+                          ? Theme.of(context).colorScheme.secondary 
+                          : Theme.of(context).colorScheme.primary)
+                      : Colors.grey,
+                  width: 2,
                 ),
               ),
-            ],
-          ),
-        ),
-      ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    hasActiveWork
+                        ? (hasActiveBreak ? Icons.pause_circle : Icons.work)
+                        : Icons.info_outline,
+                    color: hasActiveWork
+                        ? (hasActiveBreak 
+                            ? Theme.of(context).colorScheme.secondary 
+                            : Theme.of(context).colorScheme.primary)
+                        : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    hasActiveWork
+                        ? (hasActiveBreak ? 'Em Pausa' : 'Trabalhando')
+                        : 'Fora do Expediente',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: hasActiveWork
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -400,11 +420,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           )
         else
           ...employees.map((employee) {
-            final summary = _dataService.getDailySummary(
-              employee.id,
-              DateTime.now(),
+            return FutureBuilder<DailySummary>(
+              future: _dataService.getDailySummary(employee.id, DateTime.now()),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  );
+                }
+                return _buildEmployeeSummaryCard(employee, snapshot.data!);
+              },
             );
-            return _buildEmployeeSummaryCard(employee, summary);
           }).toList(),
       ],
     );

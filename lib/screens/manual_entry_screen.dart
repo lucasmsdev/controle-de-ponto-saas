@@ -26,18 +26,32 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   Widget build(BuildContext context) {
     final currentUser = _dataService.currentUser!;
     final isManager = _dataService.isAdminOrManager;
-    
-    // Verifica se funcionário já lançou manual hoje
-    final hasManualToday = !isManager && 
-        _dataService.hasManualRecordToday(currentUser.id);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lançamento Manual'),
       ),
-      body: hasManualToday
-          ? _buildAlreadyRegisteredMessage()
-          : SingleChildScrollView(
+      body: isManager
+          ? _buildManagerForm()
+          : FutureBuilder<bool>(
+              future: _dataService.hasManualRecordToday(currentUser.id),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                final hasManualToday = snapshot.data!;
+                
+                return hasManualToday
+                    ? _buildAlreadyRegisteredMessage()
+                    : _buildEmployeeForm();
+              },
+            ),
+    );
+  }
+
+  Widget _buildManagerForm() {
+    return SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
@@ -58,9 +72,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                isManager
-                                    ? 'Você pode lançar horários para qualquer funcionário'
-                                    : 'Você pode lançar um horário manual por dia',
+                                'Você pode lançar horários para qualquer funcionário',
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
@@ -73,7 +85,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                     const SizedBox(height: 24),
 
                     // Seleção de funcionário (apenas para gerente)
-                    if (isManager) ...[
                       const Text(
                         'Funcionário',
                         style: TextStyle(
