@@ -6,7 +6,22 @@ A Flutter web application designed for managing employee work and break times, f
 
 ## Recent Changes (Outubro 2025)
 
-### Correções Críticas de Login
+### Correção Crítica: UI Lendo do Supabase (15/10/2025)
+- **Problema Resolvido:** Registros salvos no Supabase não apareciam na UI (leitura de memória local vazia)
+- **HistoryScreen:** Convertido para FutureBuilder com leitura async do Supabase
+  - Admin/gerente sem filtro → `getAllRecords()` (todos os registros)
+  - Admin/gerente com filtro → `getUserRecords(userId)` (usuário específico)
+  - Funcionário → `getUserRecords(currentUser.id)` (apenas próprios registros)
+  - Dropdown corrigido para aceitar `String?` (nullable) permitindo "Todos os usuários"
+- **ManualEntryScreen:** `addManualRecord()` agora usa `await` com tratamento de erros
+- **EditRecordScreen:** `updateRecord()` e `deleteRecord()` agora usam `await` com tratamento de erros
+- **Resultado:** UI agora carrega dados do Supabase em tempo real, histórico acessível para todos os tipos de usuário
+
+### Correções de Compilação
+- **DateFormat removido:** Substituído por formatação manual de datas (sem dependência do pacote `intl`)
+- **Build compilando:** Flutter web build bem-sucedido após limpeza de cache
+
+### Correções Críticas de Login (Anteriores)
 - **Problema Resolvido:** Tela cinza após login (DataService.currentUser null)
 - **Solução:** Sincronização automática entre SupabaseService e DataService após autenticação
 - **Implementação:** LoginScreen agora seta currentUser no DataService após login bem-sucedido no Supabase
