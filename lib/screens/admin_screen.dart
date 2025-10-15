@@ -153,7 +153,7 @@ class _AdminScreenState extends State<AdminScreen> {
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (nameController.text.isEmpty ||
                     emailController.text.isEmpty ||
                     passwordController.text.isEmpty) {
@@ -166,8 +166,11 @@ class _AdminScreenState extends State<AdminScreen> {
                   return;
                 }
 
+                bool success = false;
+                String message = '';
+
                 if (isEditing) {
-                  _dataService.updateUser(
+                  success = await _dataService.updateUser(
                     user.copyWith(
                       name: nameController.text,
                       email: emailController.text,
@@ -175,28 +178,31 @@ class _AdminScreenState extends State<AdminScreen> {
                       role: selectedRole,
                     ),
                   );
+                  message = success 
+                      ? 'Usuário atualizado com sucesso'
+                      : 'Erro ao atualizar usuário';
                 } else {
-                  _dataService.addUser(
+                  final result = await _dataService.addUser(
                     name: nameController.text,
                     email: emailController.text,
                     password: passwordController.text,
                     role: selectedRole,
                   );
+                  success = result['success'];
+                  message = result['message'];
                 }
 
-                Navigator.of(context).pop();
-                this.setState(() {});
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  this.setState(() {});
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isEditing
-                          ? 'Usuário atualizado com sucesso'
-                          : 'Usuário criado com sucesso',
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      backgroundColor: success ? Colors.green : Colors.red,
                     ),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                  );
+                }
               },
               child: Text(isEditing ? 'Salvar' : 'Criar'),
             ),
@@ -221,17 +227,24 @@ class _AdminScreenState extends State<AdminScreen> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              _dataService.deleteUser(user.id);
-              Navigator.of(context).pop();
-              setState(() {});
+            onPressed: () async {
+              final success = await _dataService.deleteUser(user.id);
+              
+              if (mounted) {
+                Navigator.of(context).pop();
+                setState(() {});
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Usuário excluído com sucesso'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success 
+                          ? 'Usuário excluído com sucesso'
+                          : 'Erro ao excluir usuário',
+                    ),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

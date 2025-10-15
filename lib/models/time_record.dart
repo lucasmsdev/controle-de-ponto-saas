@@ -4,7 +4,7 @@ class TimeRecord {
   final String userId;
   final DateTime startTime;
   final DateTime? endTime; // null = ainda em andamento
-  final RecordType type; // trabalho ou break
+  final String type; // trabalho ou pausa (string do banco)
 
   TimeRecord({
     required this.id,
@@ -13,6 +13,11 @@ class TimeRecord {
     this.endTime,
     required this.type,
   });
+  
+  /// Converte o tipo String para enum RecordType
+  RecordType get recordType {
+    return type == 'trabalho' ? RecordType.trabalho : RecordType.pausa;
+  }
 
   /// Verifica se o registro ainda está em andamento
   bool get isActive => endTime == null;
@@ -36,7 +41,7 @@ class TimeRecord {
     String? userId,
     DateTime? startTime,
     DateTime? endTime,
-    RecordType? type,
+    String? type,
   }) {
     return TimeRecord(
       id: id ?? this.id,

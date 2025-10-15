@@ -13,86 +13,67 @@ class DataService {
   /// Usuário atualmente logado
   User? currentUser;
 
-  /// Lista de usuários do sistema (dados mockados para MVP)
-  final List<User> users = [
-    User(
-      id: '1',
-      name: 'Admin Sistema',
-      email: 'admin@empresa.com',
-      password: 'admin123',
-      role: UserRole.admin,
-    ),
-    User(
-      id: '2',
-      name: 'João Gerente',
-      email: 'gerente@empresa.com',
-      password: 'gerente123',
-      role: UserRole.gerente,
-    ),
-    User(
-      id: '3',
-      name: 'Maria Funcionária',
-      email: 'funcionario@empresa.com',
-      password: 'func123',
-      role: UserRole.funcionario,
-    ),
-  ];
+  /// Lista de usuários do sistema (carregada do Supabase)
+  List<User> users = [];
 
   /// Lista de registros de ponto
   final List<TimeRecord> timeRecords = [];
 
-  /// Contador para gerar IDs únicos
-  int _userIdCounter = 4;
-  int _recordIdCounter = 1;
-
-  /// Autentica um usuário
-  User? login(String email, String password) {
-    try {
-      final user = users.firstWhere(
-        (u) => u.email == email && u.password == password,
-      );
-      currentUser = user;
-      return user;
-    } catch (e) {
-      return null;
-    }
+  /// Carrega todos os usuários do Supabase
+  Future<void> loadUsers() async {
+    users = await _supabaseService.getUsers();
   }
 
   /// Faz logout do usuário atual
   void logout() {
     currentUser = null;
+    users.clear();
   }
 
-  /// Adiciona um novo usuário
-  User addUser({
+  /// Adiciona um novo usuário (usando Supabase)
+  Future<Map<String, dynamic>> addUser({
     required String name,
     required String email,
     required String password,
     required UserRole role,
-  }) {
-    final user = User(
-      id: (_userIdCounter++).toString(),
+  }) async {
+    final result = await _supabaseService.register(
       name: name,
       email: email,
       password: password,
       role: role,
     );
-    users.add(user);
-    return user;
-  }
-
-  /// Atualiza um usuário existente
-  void updateUser(User updatedUser) {
-    final index = users.indexWhere((u) => u.id == updatedUser.id);
-    if (index != -1) {
-      users[index] = updatedUser;
+    
+    // Recarrega lista de usuários se sucesso
+    if (result['success']) {
+      await loadUsers();
     }
+    
+    return result;
   }
 
-  /// Remove um usuário
-  void deleteUser(String userId) {
-    users.removeWhere((u) => u.id == userId);
-    timeRecords.removeWhere((r) => r.userId == userId);
+  /// Atualiza um usuário existente (usando Supabase)
+  Future<bool> updateUser(User updatedUser) async {
+    final success = await _supabaseService.updateUser(updatedUser);
+    
+    // Recarrega lista de usuários se sucesso
+    if (success) {
+      await loadUsers();
+    }
+    
+    return success;
+  }
+
+  /// Remove um usuário (usando Supabase)
+  Future<bool> deleteUser(String userId) async {
+    final success = await _supabaseService.deleteUser(userId);
+    
+    // Recarrega lista de usuários se sucesso
+    if (success) {
+      await loadUsers();
+    }
+    
+    return success;
   }
 
   /// Inicia um novo período (trabalho ou pausa)
@@ -154,7 +135,7 @@ class DataService {
     for (final record in dayRecords) {
       // Ignora registros ainda ativos para o cálculo
       if (!record.isActive) {
-        if (record.type == RecordType.trabalho.name) {
+        if (record.type == 'trabalho') {
           totalWorkHours += record.durationInHours;
         } else {
           totalBreakHours += record.durationInHours;

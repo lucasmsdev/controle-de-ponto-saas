@@ -234,7 +234,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: record.type == RecordType.trabalho
+                    color: record.type == 'trabalho'
                         ? Colors.blue.shade100
                         : Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(16),
@@ -243,19 +243,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        record.type == RecordType.trabalho
+                        record.type == 'trabalho'
                             ? Icons.work
                             : Icons.coffee,
                         size: 16,
-                        color: record.type == RecordType.trabalho
+                        color: record.type == 'trabalho'
                             ? Colors.blue.shade900
                             : Colors.orange.shade900,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        record.type == RecordType.trabalho ? 'Trabalho' : 'Pausa',
+                        record.type == 'trabalho' ? 'Trabalho' : 'Pausa',
                         style: TextStyle(
-                          color: record.type == RecordType.trabalho
+                          color: record.type == 'trabalho'
                               ? Colors.blue.shade900
                               : Colors.orange.shade900,
                           fontWeight: FontWeight.bold,

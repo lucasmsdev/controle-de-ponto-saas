@@ -19,7 +19,7 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
   late DateTime _selectedDate;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
-  late RecordType _recordType;
+  late String _recordType;
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
     _endTime = widget.record.endTime != null 
         ? TimeOfDay.fromDateTime(widget.record.endTime!)
         : TimeOfDay.now();
-    _recordType = widget.record.type;
+    _recordType = widget.record.type; // Agora é String
   }
 
   @override
@@ -109,21 +109,21 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              SegmentedButton<RecordType>(
+              SegmentedButton<String>(
                 segments: const [
                   ButtonSegment(
-                    value: RecordType.trabalho,
+                    value: 'trabalho',
                     label: Text('Trabalho'),
                     icon: Icon(Icons.work),
                   ),
                   ButtonSegment(
-                    value: RecordType.pausa,
+                    value: 'pausa',
                     label: Text('Pausa'),
                     icon: Icon(Icons.pause_circle),
                   ),
                 ],
                 selected: {_recordType},
-                onSelectionChanged: (Set<RecordType> selected) {
+                onSelectionChanged: (Set<String> selected) {
                   setState(() {
                     _recordType = selected.first;
                   });

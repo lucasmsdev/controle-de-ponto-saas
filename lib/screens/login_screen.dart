@@ -44,6 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final dataService = DataService();
       dataService.currentUser = user;
       
+      // Carrega lista de usuários do Supabase
+      await dataService.loadUsers();
+      
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
