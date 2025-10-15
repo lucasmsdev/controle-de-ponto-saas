@@ -6,6 +6,14 @@ A Flutter web application designed for managing employee work and break times, f
 
 ## Recent Changes (Outubro 2025)
 
+### Correção: Atualização da Dashboard Após Edição (15/10/2025)
+- **Problema Resolvido:** Edições de horário no histórico não atualizavam a dashboard do gerente
+  - **Causa:** Botão "Ver Histórico Completo" não tinha callback `.then(setState)` ao retornar
+  - **Solução:** Adicionado `.then((_) => setState(() {}))` no botão de histórico
+  - **Resultado:** Dashboard agora atualiza automaticamente ao voltar do histórico, recarregando FutureBuilders com dados do Supabase
+- **Logs de Debug:** Adicionados logs em DataService e SupabaseService para rastreamento de tipos de registro
+- **Carregamento de Usuários:** DashboardScreen agora carrega usuários do Supabase no initState para gerentes/admins
+
 ### Migração de Tipos e Carregamento Dinâmico de Usuários (15/10/2025)
 - **Problema 1 Resolvido:** Lançamentos manuais salvavam todos os registros como "pausa"
   - **Causa:** TimeRecord.type usava enum RecordType mas Supabase esperava String
