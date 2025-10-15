@@ -289,17 +289,21 @@ class SupabaseService {
     required String type,
   }) async {
     try {
-      await client.from('time_records').insert({
+      print('🔍 DEBUG SupabaseService: Recebido type="$type"');
+      final payload = {
         'user_id': int.parse(userId),
         'start_time': startTime.toIso8601String(),
         'end_time': endTime.toIso8601String(),
         'type': type,
         'is_manual': true,
-      });
+      };
+      print('🔍 DEBUG SupabaseService: Payload completo: $payload');
+      
+      await client.from('time_records').insert(payload);
 
       return true;
     } catch (e) {
-      print('Erro ao adicionar registro manual: $e');
+      print('❌ Erro ao adicionar registro manual: $e');
       return false;
     }
   }

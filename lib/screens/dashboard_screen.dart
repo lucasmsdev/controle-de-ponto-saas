@@ -23,6 +23,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _themeService = ThemeService();
 
   @override
+  void initState() {
+    super.initState();
+    // Carrega usuários do Supabase se for gerente ou admin
+    if (_dataService.isAdminOrManager) {
+      _dataService.loadUsers();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final user = _dataService.currentUser!;
     final isAdminOrManager = _dataService.isAdminOrManager;

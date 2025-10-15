@@ -178,12 +178,15 @@ class DataService {
     required DateTime endTime,
     required RecordType type,
   }) async {
-    return await _supabaseService.addManualRecord(
+    print('🔍 DEBUG DataService: Salvando registro manual tipo="${type.name}"');
+    final result = await _supabaseService.addManualRecord(
       userId: userId,
       startTime: startTime,
       endTime: endTime,
       type: type.name,
     );
+    print('🔍 DEBUG DataService: Resultado salvamento: $result');
+    return result;
   }
 
   /// Edita um registro existente
