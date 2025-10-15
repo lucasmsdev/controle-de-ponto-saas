@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../services/data_service.dart';
 import '../models/user.dart';
 import '../models/time_record.dart';
@@ -50,49 +49,60 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     );
   }
 
+  Widget _buildEmployeeForm() {
+    return _buildFormContent(false);
+  }
+
   Widget _buildManagerForm() {
+    return _buildFormContent(true);
+  }
+
+  Widget _buildFormContent(bool isManager) {
     return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Mensagem informativa
+            Card(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
                   children: [
-                    // Mensagem informativa
-                    Card(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Você pode lançar horários para qualquer funcionário',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                          ],
+                    Icon(
+                      Icons.info_outline,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        isManager
+                            ? 'Você pode lançar horários para qualquer funcionário'
+                            : 'Você pode lançar um horário manual por dia',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
 
-                    // Seleção de funcionário (apenas para gerente)
-                      const Text(
-                        'Funcionário',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+            // Seleção de funcionário (apenas para gerente)
+            if (isManager) ...[
+              const Text(
+                'Funcionário',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
                       DropdownButtonFormField<User>(
                         value: _selectedEmployee,
                         decoration: const InputDecoration(
@@ -178,7 +188,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                           suffixIcon: Icon(Icons.calendar_today),
                         ),
                         child: Text(
-                          DateFormat('dd/MM/yyyy').format(_selectedDate),
+                          '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}',
                         ),
                       ),
                     ),
@@ -260,8 +270,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                   ],
                 ),
               ),
-            ),
-    );
+            );
   }
 
   Widget _buildAlreadyRegisteredMessage() {
@@ -300,7 +309,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     );
   }
 
-  void _saveManualEntry() {
+  Future<void> _saveManualEntry() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -341,23 +350,45 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       return;
     }
 
-    // Adiciona o registro
-    _dataService.addManualRecord(
-      userId: targetUserId,
-      startTime: startDateTime,
-      endTime: endDateTime,
-      type: _recordType,
-    );
+    try {
+      // Adiciona o registro com await
+      final success = await _dataService.addManualRecord(
+        userId: targetUserId,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        type: _recordType,
+      );
 
-    // Mostra mensagem de sucesso
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Registro salvo com sucesso!'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-    );
+      if (!mounted) return;
 
-    // Volta para a tela anterior
-    Navigator.of(context).pop();
+      if (success) {
+        // Mostra mensagem de sucesso
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Registro salvo com sucesso!'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+
+        // Volta para a tela anterior
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao salvar registro. Tente novamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao salvar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

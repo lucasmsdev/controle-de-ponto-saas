@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../services/data_service.dart';
 import '../models/time_record.dart';
 import '../models/user.dart';
@@ -17,19 +16,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final _dataService = DataService();
   String? _selectedUserId;
 
+  // Chave para forçar rebuild do FutureBuilder
+  Key _futureBuilderKey = UniqueKey();
+
+  void _refreshData() {
+    setState(() {
+      _futureBuilderKey = UniqueKey();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdminOrManager = _dataService.isAdminOrManager;
-    
-    // Obtém registros dos últimos 30 dias
-    final records = _dataService.getRecordsLastDays(
-      30,
-      userId: _selectedUserId ?? (!isAdminOrManager ? _dataService.currentUser!.id : null),
-    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Histórico (30 dias)'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshData,
+            tooltip: 'Atualizar',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -37,65 +46,108 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (isAdminOrManager) ...[
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: DropdownButtonFormField<String>(
+              child: DropdownButtonFormField<String?>(
                 value: _selectedUserId,
                 decoration: const InputDecoration(
                   labelText: 'Filtrar por usuário',
                   prefixIcon: Icon(Icons.person),
                 ),
                 items: [
-                  const DropdownMenuItem(
+                  const DropdownMenuItem<String?>(
                     value: null,
                     child: Text('Todos os usuários'),
                   ),
                   ..._dataService.users.map((user) {
-                    return DropdownMenuItem(
+                    return DropdownMenuItem<String?>(
                       value: user.id,
                       child: Text('${user.name} (${user.role.displayName})'),
                     );
                   }).toList(),
                 ],
                 onChanged: (value) {
-                  setState(() => _selectedUserId = value);
+                  setState(() {
+                    _selectedUserId = value;
+                    _futureBuilderKey = UniqueKey(); // Atualiza dados
+                  });
                 },
               ),
             ),
           ],
-          
-          // Lista de registros
+
+          // Lista de registros usando FutureBuilder para dados do Supabase
           Expanded(
-            child: records.isEmpty
-                ? const Center(
+            child: FutureBuilder<List<TimeRecord>>(
+              key: _futureBuilderKey,
+              future: _selectedUserId != null
+                  ? _dataService.getUserRecords(_selectedUserId!)
+                  : isAdminOrManager
+                      ? _dataService.getAllRecords()
+                      : _dataService.getUserRecords(_dataService.currentUser!.id!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.history,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 16),
+                        const Icon(Icons.error, size: 64, color: Colors.red),
+                        const SizedBox(height: 16),
                         Text(
-                          'Nenhum registro encontrado',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey,
-                          ),
+                          'Erro ao carregar histórico:\n${snapshot.error}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _refreshData,
+                          child: const Text('Tentar novamente'),
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      final record = records[index];
-                      final user = _dataService.users.firstWhere(
-                        (u) => u.id == record.userId,
-                      );
-                      return _buildRecordCard(record, user, isAdminOrManager);
-                    },
-                  ),
+                  );
+                }
+
+                final records = snapshot.data ?? [];
+
+                if (records.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.history, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Nenhum registro encontrado',
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: records.length,
+                  itemBuilder: (context, index) {
+                    final record = records[index];
+                    final user = _dataService.users.firstWhere(
+                      (u) => u.id == record.userId,
+                      orElse: () => User(
+                        id: record.userId,
+                        name: 'Usuário desconhecido',
+                        email: '',
+                        password: '',
+                        role: UserRole.funcionario,
+                      ),
+                    );
+                    return _buildRecordCard(record, user, isAdminOrManager);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -112,7 +164,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final hours = duration ~/ 60;
     final minutes = duration % 60;
     final canEdit = isManager && _dataService.canEditRecord(record);
-    
+
+    // Formata data manualmente sem intl
+    String formatDate(DateTime date) {
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    }
+
+    String formatTime(DateTime time) {
+      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -124,50 +185,47 @@ class _HistoryScreenState extends State<HistoryScreen> {
             if (isManager) ...[
               Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    radius: 16,
-                    child: Text(
-                      user.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const Icon(Icons.person, size: 20, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: user.role == UserRole.admin
+                          ? Colors.red.shade100
+                          : user.role == UserRole.gerente
+                              ? Colors.orange.shade100
+                              : Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Text(
-                      user.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                      user.role.displayName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: user.role == UserRole.admin
+                            ? Colors.red.shade900
+                            : user.role == UserRole.gerente
+                                ? Colors.orange.shade900
+                                : Colors.blue.shade900,
                       ),
                     ),
                   ),
-                  // Botão de editar (apenas para gerente e registros editáveis)
-                  if (canEdit)
-                    IconButton(
-                      icon: Icon(
-                        Icons.edit,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => EditRecordScreen(record: record),
-                          ),
-                        ).then((_) => setState(() {}));
-                      },
-                      tooltip: 'Editar registro',
-                    ),
                 ],
               ),
               const SizedBox(height: 12),
             ],
-            
-            // Badge de tipo
+
+            // Tipo de registro e badge manual
             Row(
               children: [
                 Container(
@@ -177,15 +235,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: record.type == RecordType.trabalho
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                        : Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: record.type == RecordType.trabalho
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.secondary,
-                      width: 1.5,
-                    ),
+                        ? Colors.blue.shade100
+                        : Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -193,92 +245,132 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       Icon(
                         record.type == RecordType.trabalho
                             ? Icons.work
-                            : Icons.pause_circle,
-                        size: 18,
+                            : Icons.coffee,
+                        size: 16,
                         color: record.type == RecordType.trabalho
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.secondary,
+                            ? Colors.blue.shade900
+                            : Colors.orange.shade900,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        record.type.displayName,
+                        record.type == RecordType.trabalho ? 'Trabalho' : 'Pausa',
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
                           color: record.type == RecordType.trabalho
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.secondary,
+                              ? Colors.blue.shade900
+                              : Colors.orange.shade900,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Spacer(),
-                if (isActive)
+                const SizedBox(width: 8),
+                // Badge de lançamento manual (TODO: adicionar campo isManual ao modelo)
+                /*if (record.isManual)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.orange),
+                      color: Colors.purple.shade100,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.radio_button_checked, size: 12, color: Colors.orange),
-                        SizedBox(width: 4),
+                        Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: Colors.purple.shade900,
+                        ),
+                        const SizedBox(width: 6),
                         Text(
-                          'Em Andamento',
+                          'Manual',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange,
+                            color: Colors.purple.shade900,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  ),*/
               ],
             ),
-            const Divider(height: 24),
-            
-            // Data e horários
+            const SizedBox(height: 12),
+
+            // Data
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 18),
+                const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
-                  DateFormat('dd/MM/yyyy').format(record.startTime),
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  formatDate(record.startTime),
+                  style: const TextStyle(fontSize: 14),
                 ),
               ],
             ),
             const SizedBox(height: 8),
+
+            // Horários
             Row(
               children: [
-                const Icon(Icons.access_time, size: 18),
+                const Icon(Icons.access_time, size: 18, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
-                  '${DateFormat('HH:mm').format(record.startTime)} - ${record.endTime != null ? DateFormat('HH:mm').format(record.endTime!) : '...'}',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  '${formatTime(record.startTime)} - ${record.endTime != null ? formatTime(record.endTime!) : 'Em andamento'}',
+                  style: const TextStyle(fontSize: 14),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            
+
             // Duração
-            if (!isActive) ...[
+            Row(
+              children: [
+                const Icon(Icons.timer, size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text(
+                  isActive
+                      ? 'Em andamento (${hours}h ${minutes}min)'
+                      : 'Duração: ${hours}h ${minutes}min',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                    color: isActive ? Colors.green : null,
+                  ),
+                ),
+              ],
+            ),
+
+            // Botões de ação (editar/excluir)
+            if (canEdit) ...[
+              const SizedBox(height: 12),
               Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Icon(Icons.timer, size: 18),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final result = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditRecordScreen(record: record),
+                        ),
+                      );
+                      if (result == true && mounted) {
+                        _refreshData();
+                      }
+                    },
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: const Text('Editar'),
+                  ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Duração: ${hours}h ${minutes}min',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmDelete(record),
+                    icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                    label: const Text(
+                      'Excluir',
+                      style: TextStyle(color: Colors.red),
                     ),
                   ),
                 ],
@@ -288,5 +380,54 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(TimeRecord record) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text(
+          'Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Excluir',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await _dataService.deleteRecord(record.id);
+        if (mounted) {
+          _refreshData();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registro excluído com sucesso'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao excluir registro: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }

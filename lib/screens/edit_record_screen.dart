@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../services/data_service.dart';
 import '../models/time_record.dart';
 
@@ -160,7 +159,7 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
                     suffixIcon: Icon(Icons.calendar_today),
                   ),
                   child: Text(
-                    DateFormat('dd/MM/yyyy').format(_selectedDate),
+                    '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}',
                   ),
                 ),
               ),
@@ -246,7 +245,7 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
     );
   }
 
-  void _saveChanges() {
+  Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -279,25 +278,47 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
       return;
     }
 
-    // Atualiza o registro
-    final updatedRecord = widget.record.copyWith(
-      startTime: startDateTime,
-      endTime: endDateTime,
-      type: _recordType,
-    );
+    try {
+      // Atualiza o registro
+      final updatedRecord = widget.record.copyWith(
+        startTime: startDateTime,
+        endTime: endDateTime,
+        type: _recordType,
+      );
 
-    _dataService.updateRecord(updatedRecord);
+      final success = await _dataService.updateRecord(updatedRecord);
 
-    // Mostra mensagem de sucesso
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Registro atualizado com sucesso!'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-    );
+      if (!mounted) return;
 
-    // Volta para a tela anterior
-    Navigator.of(context).pop();
+      if (success) {
+        // Mostra mensagem de sucesso
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Registro atualizado com sucesso!'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+
+        // Volta para a tela anterior com sucesso
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao atualizar registro. Tente novamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao atualizar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showDeleteConfirmation() {
@@ -312,16 +333,41 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              _dataService.deleteRecord(widget.record.id);
-              Navigator.of(context).pop(); // Fecha o diálogo
-              Navigator.of(context).pop(); // Volta para o histórico
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Registro excluído com sucesso!'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+            onPressed: () async {
+              try {
+                final success = await _dataService.deleteRecord(widget.record.id);
+                
+                if (!mounted) return;
+                
+                Navigator.of(context).pop(); // Fecha o diálogo
+                
+                if (success) {
+                  Navigator.of(context).pop(true); // Volta para o histórico com sucesso
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Registro excluído com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erro ao excluir registro. Tente novamente.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (!mounted) return;
+                
+                Navigator.of(context).pop(); // Fecha o diálogo
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erro ao excluir: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
