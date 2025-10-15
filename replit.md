@@ -6,6 +6,18 @@ A Flutter web application designed for managing employee work and break times, f
 
 ## Recent Changes (Outubro 2025)
 
+### Migração de Tipos e Carregamento Dinâmico de Usuários (15/10/2025)
+- **Problema 1 Resolvido:** Lançamentos manuais salvavam todos os registros como "pausa"
+  - **Causa:** TimeRecord.type usava enum RecordType mas Supabase esperava String
+  - **Solução:** Migrado TimeRecord.type de enum para String ('trabalho'/'pausa')
+  - **Arquivos Atualizados:** time_record.dart, history_screen.dart, data_service.dart, edit_record_screen.dart
+- **Problema 2 Resolvido:** Funcionários criados apareciam como "Usuário desconhecido" no histórico
+  - **Causa:** DataService usava lista hardcoded de usuários ao invés de ler do Supabase
+  - **Solução:** Implementado `loadUsers()` que busca todos os usuários do banco
+  - **Integração:** loadUsers() chamado após login e após CRUD de usuários (add/update/delete)
+  - **AdminScreen:** Métodos async com await + reload automático da lista de usuários
+- **Resultado:** Novos funcionários aparecem imediatamente na dashboard e histórico sem necessidade de reiniciar
+
 ### Correção Crítica: UI Lendo do Supabase (15/10/2025)
 - **Problema Resolvido:** Registros salvos no Supabase não apareciam na UI (leitura de memória local vazia)
 - **HistoryScreen:** Convertido para FutureBuilder com leitura async do Supabase
