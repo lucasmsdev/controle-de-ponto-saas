@@ -137,7 +137,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   MaterialPageRoute(
                     builder: (_) => const HistoryScreen(),
                   ),
-                );
+                ).then((_) => setState(() {})); // Atualiza dashboard ao voltar
               },
               icon: const Icon(Icons.history),
               label: const Text('Ver Histórico Completo'),
