@@ -128,6 +128,8 @@ class DataService {
     // Busca registros do Supabase para a data especificada
     final dayRecords = await _supabaseService.getRecordsForDate(userId, date);
 
+    print('🔍 DEBUG getDailySummary: processando ${dayRecords.length} registros');
+    
     double totalWorkHours = 0;
     double totalBreakHours = 0;
 
@@ -137,14 +139,20 @@ class DataService {
       if (!record.isActive) {
         if (record.type == 'trabalho') {
           totalWorkHours += record.durationInHours;
+          print('🔍   + Trabalho: ${record.durationInHours.toStringAsFixed(2)}h (total: ${totalWorkHours.toStringAsFixed(2)}h)');
         } else {
           totalBreakHours += record.durationInHours;
+          print('🔍   + Pausa: ${record.durationInHours.toStringAsFixed(2)}h (total: ${totalBreakHours.toStringAsFixed(2)}h)');
         }
+      } else {
+        print('🔍   - Registro ativo (ignorado): tipo=${record.type}');
       }
     }
 
     // Calcula horas líquidas (trabalho - pausa)
     final netWorkHours = totalWorkHours - totalBreakHours;
+    
+    print('🔍 DEBUG Resultado: Trabalho=${totalWorkHours.toStringAsFixed(2)}h, Pausa=${totalBreakHours.toStringAsFixed(2)}h, Líquido=${netWorkHours.toStringAsFixed(2)}h');
 
     return DailySummary(
       userId: userId,

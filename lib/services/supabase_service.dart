@@ -202,6 +202,8 @@ class SupabaseService {
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
+      print('🔍 DEBUG getRecordsForDate: userId=$userId, date=${date.toString().substring(0,10)}');
+      
       final response = await client
           .from('time_records')
           .select()
@@ -210,7 +212,10 @@ class SupabaseService {
           .lte('start_time', endOfDay.toIso8601String())
           .order('start_time');
 
-      return (response as List).map((record) {
+      print('🔍 DEBUG getRecordsForDate: encontrados ${(response as List).length} registros');
+      
+      final records = (response as List).map((record) {
+        print('🔍   - Registro: tipo="${record['type']}", start=${record['start_time']}, end=${record['end_time']}');
         return TimeRecord(
           id: record['id'].toString(),
           userId: record['user_id'].toString(),
@@ -221,8 +226,10 @@ class SupabaseService {
           type: record['type'],
         );
       }).toList();
+      
+      return records;
     } catch (e) {
-      print('Erro ao buscar registros do dia: $e');
+      print('❌ Erro ao buscar registros do dia: $e');
       return [];
     }
   }
