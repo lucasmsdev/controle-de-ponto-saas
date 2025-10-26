@@ -6,6 +6,21 @@ A Flutter web application designed for managing employee work and break times, f
 
 ## Recent Changes (Outubro 2025)
 
+### Sistema de Atribuição de Funcionários a Gerentes (26/10/2025)
+- **Nova Funcionalidade:** Implementado sistema completo de atribuição de funcionários a gerentes específicos
+  - **Banco de Dados:** Adicionada coluna `manager_id` (FK para users.id) na tabela users
+  - **Modelo User:** Campo `managerId` (String?, nullable) para armazenar ID do gerente responsável
+  - **AdminScreen:** Dropdown "Gerente Responsável" ao criar/editar funcionários
+    - Dropdown só aparece quando role selecionado é "Funcionário"
+    - Lista apenas gerentes disponíveis + opção "Sem gerente"
+    - Admins e gerentes sempre têm managerId = null
+  - **Dashboard do Gerente:** Filtragem automática para mostrar apenas funcionários atribuídos
+    - Gerente vê apenas funcionários com managerId == currentUser.id
+    - Admin continua vendo todos os funcionários
+  - **Registro Público:** Botão "Criar nova conta" agora cria apenas contas de funcionário (sem seleção de role)
+  - **Limpeza de Código:** Removidos logs de debug e credenciais de teste da tela de login
+- **Resultado:** Melhor controle organizacional com gerentes responsáveis por equipes específicas
+
 ### Correção: Atualização da Dashboard Após Edição (15/10/2025)
 - **Problema Resolvido:** Edições de horário no histórico não atualizavam a dashboard do gerente
   - **Causa:** Botão "Ver Histórico Completo" não tinha callback `.then(setState)` ao retornar
@@ -81,13 +96,13 @@ The application is built with Flutter 3.22.0 and Dart 3.4.0, utilizing Material 
 -   **History:** Displays records from the last 30 days with start/end times and calculated durations. Admins/Managers can filter by user and edit/delete records.
 -   **User Administration (Admin/Manager):** Create, edit, and delete users (Admin only for deletion), and manage user roles/permissions.
 -   **Permission Control:**
-    -   **Admin:** Full access, including user deletion.
-    -   **Manager:** User administration, record editing, unlimited manual entries.
-    -   **Employee:** Personal records only, one manual entry per day.
+    -   **Admin:** Full access, including user deletion. Can assign employees to managers. Sees all employees in dashboard.
+    -   **Manager:** User administration, record editing, unlimited manual entries. Can assign employees to other managers. Sees only assigned employees in dashboard.
+    -   **Employee:** Personal records only, one manual entry per day. Can have an assigned manager.
 
 ### System Design Choices
 -   **Data Models:**
-    -   `User`: id, name, email, password, role.
+    -   `User`: id, name, email, password, role, managerId (nullable - ID do gerente responsável pelo funcionário).
     -   `TimeRecord`: id, userId, startTime, endTime, type (work/break). Includes methods for active status and duration calculation.
     -   `DailySummary`: userId, date, totalWorkHours, totalBreakHours, netWorkHours.
 -   **Supabase Integration (`SupabaseService`):** Manages all database interactions, including authentication, user management, and time record operations.
@@ -101,7 +116,7 @@ The application is built with Flutter 3.22.0 and Dart 3.4.0, utilizing Material 
 
 -   **Framework:** Flutter (3.22.0)
 -   **Backend & Database:** Supabase (PostgreSQL)
-    -   **Tables:** `users`, `time_records`.
+    -   **Tables:** `users` (with manager_id FK), `time_records`.
     -   **Authentication:** Email/password login managed by Supabase.
     -   **Security:** Row Level Security (RLS) enabled with defined access policies.
 -   **Packages:**
