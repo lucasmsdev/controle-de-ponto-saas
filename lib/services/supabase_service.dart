@@ -54,6 +54,7 @@ class SupabaseService {
         email: response['email'],
         password: response['password'],
         role: _parseRole(response['role']),
+        managerId: response['manager_id']?.toString(),
       );
 
       return _currentUser;
@@ -72,6 +73,7 @@ class SupabaseService {
     required String email,
     required String password,
     required app_user.UserRole role,
+    String? managerId,
   }) async {
     try {
       await client.from('users').insert({
@@ -79,6 +81,7 @@ class SupabaseService {
         'email': email.toLowerCase(),
         'password': password,
         'role': role.name,
+        'manager_id': managerId != null ? int.parse(managerId) : null,
       });
 
       return {'success': true, 'message': 'Usuário cadastrado com sucesso'};
@@ -105,6 +108,7 @@ class SupabaseService {
           email: userData['email'],
           password: userData['password'],
           role: _parseRole(userData['role']),
+          managerId: userData['manager_id']?.toString(),
         );
       }).toList();
     } catch (e) {
@@ -120,6 +124,7 @@ class SupabaseService {
         'email': user.email,
         'password': user.password,
         'role': user.role.name,
+        'manager_id': user.managerId != null ? int.parse(user.managerId!) : null,
       }).eq('id', int.parse(user.id));
 
       return true;

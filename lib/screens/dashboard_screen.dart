@@ -373,7 +373,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Conteúdo para Admin/Gerente: resumo de todos os funcionários
   Widget _buildManagerContent() {
-    final employees = _dataService.getEmployees();
+    final currentUser = _dataService.currentUser!;
+    final isAdmin = currentUser.role == UserRole.admin;
+    
+    // Filtra funcionários baseado no tipo de usuário
+    final employees = _dataService.getEmployees().where((employee) {
+      if (isAdmin) {
+        // Admin vê todos os funcionários
+        return true;
+      } else {
+        // Gerente vê apenas funcionários atribuídos a ele
+        return employee.managerId == currentUser.id;
+      }
+    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -397,7 +409,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         // Título
         Text(
-          'Resumo de Todos os Funcionários',
+          isAdmin ? 'Resumo de Todos os Funcionários' : 'Meus Funcionários',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,

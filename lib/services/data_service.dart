@@ -36,12 +36,14 @@ class DataService {
     required String email,
     required String password,
     required UserRole role,
+    String? managerId,
   }) async {
     final result = await _supabaseService.register(
       name: name,
       email: email,
       password: password,
       role: role,
+      managerId: managerId,
     );
     
     // Recarrega lista de usuários se sucesso

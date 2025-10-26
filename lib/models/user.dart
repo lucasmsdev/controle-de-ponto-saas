@@ -5,6 +5,7 @@ class User {
   final String email;
   final String password;
   final UserRole role;
+  final String? managerId;
 
   User({
     required this.id,
@@ -12,6 +13,7 @@ class User {
     required this.email,
     required this.password,
     required this.role,
+    this.managerId,
   });
 
   /// Cria uma cópia do usuário com campos atualizados
@@ -21,6 +23,7 @@ class User {
     String? email,
     String? password,
     UserRole? role,
+    String? managerId,
   }) {
     return User(
       id: id ?? this.id,
@@ -28,6 +31,7 @@ class User {
       email: email ?? this.email,
       password: password ?? this.password,
       role: role ?? this.role,
+      managerId: managerId ?? this.managerId,
     );
   }
 }

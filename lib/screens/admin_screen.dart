@@ -90,6 +90,11 @@ class _AdminScreenState extends State<AdminScreen> {
     final emailController = TextEditingController(text: user?.email ?? '');
     final passwordController = TextEditingController(text: user?.password ?? '');
     UserRole selectedRole = user?.role ?? UserRole.funcionario;
+    String? selectedManagerId = user?.managerId;
+
+    final managers = _dataService.users
+        .where((u) => u.role == UserRole.gerente)
+        .toList();
 
     showDialog(
       context: context,
@@ -140,10 +145,40 @@ class _AdminScreenState extends State<AdminScreen> {
                   }).toList(),
                   onChanged: (value) {
                     if (value != null) {
-                      setState(() => selectedRole = value);
+                      setState(() {
+                        selectedRole = value;
+                        if (value != UserRole.funcionario) {
+                          selectedManagerId = null;
+                        }
+                      });
                     }
                   },
                 ),
+                if (selectedRole == UserRole.funcionario) ...[
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String?>(
+                    value: selectedManagerId,
+                    decoration: const InputDecoration(
+                      labelText: 'Gerente Responsável',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Sem gerente'),
+                      ),
+                      ...managers.map((manager) {
+                        return DropdownMenuItem<String?>(
+                          value: manager.id,
+                          child: Text(manager.name),
+                        );
+                      }),
+                    ],
+                    onChanged: (value) {
+                      setState(() => selectedManagerId = value);
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -176,6 +211,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       email: emailController.text,
                       password: passwordController.text,
                       role: selectedRole,
+                      managerId: selectedRole == UserRole.funcionario ? selectedManagerId : null,
                     ),
                   );
                   message = success 
@@ -187,6 +223,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     email: emailController.text,
                     password: passwordController.text,
                     role: selectedRole,
+                    managerId: selectedRole == UserRole.funcionario ? selectedManagerId : null,
                   );
                   success = result['success'];
                   message = result['message'];
