@@ -201,8 +201,6 @@ class SupabaseService {
     try {
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
-      print('🔍 DEBUG getRecordsForDate: userId=$userId, date=${date.toString().substring(0,10)}');
       
       final response = await client
           .from('time_records')
@@ -212,10 +210,7 @@ class SupabaseService {
           .lte('start_time', endOfDay.toIso8601String())
           .order('start_time');
 
-      print('🔍 DEBUG getRecordsForDate: encontrados ${(response as List).length} registros');
-      
-      final records = (response as List).map((record) {
-        print('🔍   - Registro: tipo="${record['type']}", start=${record['start_time']}, end=${record['end_time']}');
+      return (response as List).map((record) {
         return TimeRecord(
           id: record['id'].toString(),
           userId: record['user_id'].toString(),
@@ -226,10 +221,8 @@ class SupabaseService {
           type: record['type'],
         );
       }).toList();
-      
-      return records;
     } catch (e) {
-      print('❌ Erro ao buscar registros do dia: $e');
+      print('Erro ao buscar registros do dia: $e');
       return [];
     }
   }
@@ -296,21 +289,17 @@ class SupabaseService {
     required String type,
   }) async {
     try {
-      print('🔍 DEBUG SupabaseService: Recebido type="$type"');
-      final payload = {
+      await client.from('time_records').insert({
         'user_id': int.parse(userId),
         'start_time': startTime.toIso8601String(),
         'end_time': endTime.toIso8601String(),
         'type': type,
         'is_manual': true,
-      };
-      print('🔍 DEBUG SupabaseService: Payload completo: $payload');
-      
-      await client.from('time_records').insert(payload);
+      });
 
       return true;
     } catch (e) {
-      print('❌ Erro ao adicionar registro manual: $e');
+      print('Erro ao adicionar registro manual: $e');
       return false;
     }
   }

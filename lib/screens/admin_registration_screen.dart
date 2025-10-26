@@ -83,7 +83,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cadastrar Novo Usuário'),
+        title: const Text('Criar Conta'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -109,7 +109,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
               const SizedBox(height: 8),
               
               Text(
-                'Preencha os dados do novo usuário',
+                'Crie sua conta de funcionário',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -152,27 +152,6 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     return 'Digite um email válido';
                   }
                   return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              DropdownButtonFormField<UserRole>(
-                value: _selectedRole,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de Usuário',
-                  prefixIcon: Icon(Icons.badge_outlined),
-                  border: OutlineInputBorder(),
-                ),
-                items: UserRole.values.map((role) {
-                  return DropdownMenuItem(
-                    value: role,
-                    child: Text(role.displayName),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedRole = value);
-                  }
                 },
               ),
               const SizedBox(height: 16),

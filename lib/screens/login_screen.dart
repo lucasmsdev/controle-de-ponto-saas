@@ -158,29 +158,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text('Criar nova conta'),
                   ),
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Usuários de teste:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF000),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Admin: admin@empresa.com / admin123',
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                  Text(
-                    'Gerente: gerente@empresa.com / gerente123',
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                  Text(
-                    'Funcionário: funcionario@empresa.com / func123',
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
                 ],
               ),
             ),

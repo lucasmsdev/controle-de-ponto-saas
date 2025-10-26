@@ -127,8 +127,6 @@ class DataService {
   Future<DailySummary> getDailySummary(String userId, DateTime date) async {
     // Busca registros do Supabase para a data especificada
     final dayRecords = await _supabaseService.getRecordsForDate(userId, date);
-
-    print('🔍 DEBUG getDailySummary: processando ${dayRecords.length} registros');
     
     double totalWorkHours = 0;
     double totalBreakHours = 0;
@@ -139,20 +137,14 @@ class DataService {
       if (!record.isActive) {
         if (record.type == 'trabalho') {
           totalWorkHours += record.durationInHours;
-          print('🔍   + Trabalho: ${record.durationInHours.toStringAsFixed(2)}h (total: ${totalWorkHours.toStringAsFixed(2)}h)');
         } else {
           totalBreakHours += record.durationInHours;
-          print('🔍   + Pausa: ${record.durationInHours.toStringAsFixed(2)}h (total: ${totalBreakHours.toStringAsFixed(2)}h)');
         }
-      } else {
-        print('🔍   - Registro ativo (ignorado): tipo=${record.type}');
       }
     }
 
     // Calcula horas líquidas (trabalho - pausa)
     final netWorkHours = totalWorkHours - totalBreakHours;
-    
-    print('🔍 DEBUG Resultado: Trabalho=${totalWorkHours.toStringAsFixed(2)}h, Pausa=${totalBreakHours.toStringAsFixed(2)}h, Líquido=${netWorkHours.toStringAsFixed(2)}h');
 
     return DailySummary(
       userId: userId,
@@ -186,15 +178,12 @@ class DataService {
     required DateTime endTime,
     required RecordType type,
   }) async {
-    print('🔍 DEBUG DataService: Salvando registro manual tipo="${type.name}"');
-    final result = await _supabaseService.addManualRecord(
+    return await _supabaseService.addManualRecord(
       userId: userId,
       startTime: startTime,
       endTime: endTime,
       type: type.name,
     );
-    print('🔍 DEBUG DataService: Resultado salvamento: $result');
-    return result;
   }
 
   /// Edita um registro existente
